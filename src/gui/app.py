@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 
- 
+
 def create_clients_tab(clients_tab):
     """Create search bar and the clients list on the Clients tab."""
 
@@ -22,8 +22,24 @@ def create_clients_tab(clients_tab):
 
     show_all_button = ttk.Button(search_bar, text="Show all")
     show_all_button.pack(side="left", padx=5)
+
+    # Clients list with the same 6 columns as my sketch:
+    # ID, Name, Address, Phone number, City, Country
+    columns = ("id", "name", "address", "phone", "city", "country")
+    client_list = ttk.Treeview(clients_tab, columns=columns,
+                               show="headings", height=10)
+
+    client_list.heading("id", text="ID")
+    client_list.heading("name", text="Name")
+    client_list.heading("address", text="Address Line 1")
+    client_list.heading("phone", text="Phone Number")
+    client_list.heading("city", text="City")
+    client_list.heading("country", text="Country")
+
+    client_list.column("id", width=50)
+    client_list.pack(fill="both", expand=True, padx=10)
     
-    
+   
 def create_main_window():
     """Open the main window with one tab for every type of record."""
 
@@ -34,7 +50,6 @@ def create_main_window():
     # Make the tabs bigger when the window is resized
     tab_bar = ttk.Notebook(main_window)
     tab_bar.pack(fill="both", expand=True)
-
     
     # One tab per every type of record in the same order as in my sketch
     clients_tab = ttk.Frame(tab_bar)
