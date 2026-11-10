@@ -1,0 +1,15 @@
+# Python cache files
+__pycache__/
+*.pyc
+
+# Mac system files
+.DS_Store
+
+# Editor and environment folders
+.vscode/
+.idea/
+venv/
+
+# Windows system files
+Thumbs.db
+desktop.ini
