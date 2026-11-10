@@ -36,7 +36,12 @@ def create_clients_tab(clients_tab):
     client_list.heading("city", text="City")
     client_list.heading("country", text="Country")
 
-    client_list.column("id", width=50)
+    client_list.column("id", width=55, stretch=False)
+    client_list.column("name", width=140)
+    client_list.column("address", width=180)
+    client_list.column("phone", width=90)
+    client_list.column("city", width=70)
+    client_list.column("country", width=70)
     client_list.pack(fill="both", expand=True, padx=10)
     
    
