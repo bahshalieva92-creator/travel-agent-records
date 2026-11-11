@@ -181,6 +181,15 @@ def create_clients_tab(clients_tab):
     # The ID is shown automatically, so the agent cannot type it
     client_entries["ID"].config(state="readonly")
 
+    def clear_form():
+        """Clear every box in the form."""
+        for entry in client_entries.values():
+            entry.config(state="normal")
+            entry.delete(0, "end")
+        client_entries["ID"].config(state="readonly")
+        message_label.config(text="Form cleared. Fill in the details "
+                                  "to add a new client.")
+
     # Buttons from my sketch: Delete set apart on the right
     button_bar = ttk.Frame(clients_tab)
     button_bar.pack(fill="x", padx=10)
@@ -189,7 +198,7 @@ def create_clients_tab(clients_tab):
     create_button.pack(side="left", padx=5)
     update_button = ttk.Button(button_bar, text="Update")
     update_button.pack(side="left", padx=5)
-    clear_button = ttk.Button(button_bar, text="Clear")
+    clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete")
     delete_button.pack(side="right", padx=5)
