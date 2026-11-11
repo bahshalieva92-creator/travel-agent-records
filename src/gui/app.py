@@ -94,7 +94,7 @@ SAMPLE_CLIENTS = [
 def show_clients(client_list, clients):
     """Show each client as a separate new row in the list."""
     for client in clients:
-        client_list.insert("", "end", values=(
+        client_list.insert("", "end", iid=client["ID"], values=(
             client["ID"], client["Name"], client["Address Line 1"],
             client["Phone Number"], client["City"], client["Country"]))
 
@@ -189,6 +189,25 @@ def create_clients_tab(clients_tab):
         client_entries["ID"].config(state="readonly")
         message_label.config(text="Form cleared. Fill in the details "
                                   "to add a new client.")
+        client_list.selection_remove(client_list.selection())
+        
+    def fill_form(event):
+        """Show the details of the chosen client in the form."""
+        selected = client_list.selection()
+        if not selected:
+            return
+        client_id = int(selected[0])
+        for client in SAMPLE_CLIENTS:
+            if client["ID"] == client_id:
+                for field, entry in client_entries.items():
+                    entry.config(state="normal")
+                    entry.delete(0, "end")
+                    entry.insert(0, client[field])
+                client_entries["ID"].config(state="readonly")
+                message_label.config(text="Showing " + client["Name"] +
+                                     ". Update details and click Update.")
+
+    client_list.bind("<<TreeviewSelect>>", fill_form)
 
     # Buttons from my sketch: Delete set apart on the right
     button_bar = ttk.Frame(clients_tab)
