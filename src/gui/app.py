@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import font
 
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
@@ -138,7 +139,37 @@ def create_clients_tab(clients_tab):
     client_list.column("country", width=70)
     client_list.pack(fill="both", expand=True, padx=10)
     show_clients(client_list, SAMPLE_CLIENTS)
-  
+
+    # Client Details form from my sketch
+    client_form = ttk.LabelFrame(clients_tab, text="Client Details")
+    client_form.pack(fill="x", padx=10, pady=10)
+
+    # Each field: (field name, label text, row, column).
+    # Order improved from my original sketch order.
+    form_fields = [
+        ("ID", "ID (automatic)", 0, 0),
+        ("Name", "Name*", 1, 0),
+        ("Phone Number", "Phone Number*", 2, 0),
+        ("Address Line 1", "Address Line 1*", 3, 0),
+        ("Address Line 2", "Address Line 2", 4, 0),
+        ("Address Line 3", "Address Line 3", 0, 2),
+        ("City", "City*", 1, 2),
+        ("State", "State", 2, 2),
+        ("Zip Code", "Zip Code", 3, 2),
+        ("Country", "Country*", 4, 2),
+    ]
+    
+    client_entries = {}
+    for field, text, row, column in form_fields:
+        label = ttk.Label(client_form, text=text)
+        label.grid(row=row, column=column, padx=5, pady=3, sticky="w")
+        entry = ttk.Entry(client_form, width=30)
+        entry.grid(row=row, column=column + 1, padx=5, pady=3)
+        client_entries[field] = entry
+
+    # The ID is shown automatically, so the agent cannot type it
+    client_entries["ID"].config(state="readonly")
+
 
 def create_main_window():
     """Open the main window with one tab for every type of record."""
@@ -146,6 +177,12 @@ def create_main_window():
     main_window = tk.Tk()
     main_window.title("Travel Agent Record Manager")
     main_window.geometry("1000x650")
+
+    # Form titles: the app's normal font, but bigger and bold
+    title_font = font.nametofont("TkDefaultFont").copy()
+    title_font.configure(weight="bold")
+    style = ttk.Style()
+    style.configure("TLabelframe.Label", font=title_font)
 
     # Make the tabs bigger when the window is resized
     tab_bar = ttk.Notebook(main_window)
