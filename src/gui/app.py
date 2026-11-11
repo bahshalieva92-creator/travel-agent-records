@@ -90,6 +90,26 @@ SAMPLE_CLIENTS = [
      "Phone Number": "+7 812 123 45 67"},
 ]
 
+# These are 6 sample airlines from my sketch plus 9
+# more from my clients' countries to try out
+SAMPLE_AIRLINES = [
+    {"ID": 1, "Type": "airline", "Company Name": "Aeroflot"},
+    {"ID": 2, "Type": "airline", "Company Name": "Turkish Airlines"},
+    {"ID": 3, "Type": "airline", "Company Name": "Qatar Airways"},
+    {"ID": 4, "Type": "airline", "Company Name": "Spring Airlines"},
+    {"ID": 5, "Type": "airline", "Company Name": "China Eastern Airlines"},
+    {"ID": 6, "Type": "airline", "Company Name": "Emirates"},
+    {"ID": 7, "Type": "airline", "Company Name": "China Southern Airlines"},
+    {"ID": 8, "Type": "airline", "Company Name": "KLM Royal Dutch Airlines"},
+    {"ID": 9, "Type": "airline", "Company Name": "Aerolíneas Argentinas"},
+    {"ID": 10, "Type": "airline", "Company Name": "Aeroméxico"},
+    {"ID": 11, "Type": "airline", "Company Name": "Azerbaijan Airlines"},
+    {"ID": 12, "Type": "airline", "Company Name": "British Airways"},
+    {"ID": 13, "Type": "airline", "Company Name": "Lufthansa"},
+    {"ID": 14, "Type": "airline", "Company Name": "Singapore Airlines"},
+    {"ID": 15, "Type": "airline", "Company Name": "Vietnam Airlines"},
+]
+
 
 def show_clients(client_list, clients):
     """Show each client as a separate new row in the list."""
@@ -97,6 +117,13 @@ def show_clients(client_list, clients):
         client_list.insert("", "end", iid=client["ID"], values=(
             client["ID"], client["Name"], client["Address Line 1"],
             client["Phone Number"], client["City"], client["Country"]))
+        
+
+def show_airlines(airline_list, airlines):
+    """Show each airline as a separate new row in the list."""
+    for airline in airlines:
+        airline_list.insert("", "end", iid=airline["ID"], values=(
+            airline["ID"], airline["Company Name"]))
 
 
 def create_clients_tab(clients_tab):
@@ -227,6 +254,49 @@ def create_clients_tab(clients_tab):
         clients_tab,
         text="Select a client from the list, or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
+    
+
+def create_airlines_tab(airlines_tab):
+    """Create the search bar and the airline list on the Airlines tab."""
+
+    # Search bar with Search and Show all buttons, same as on Clients
+    search_bar = ttk.Frame(airlines_tab)
+    search_bar.pack(fill="x", padx=10, pady=10)
+
+    search_title = ttk.Label(search_bar, text="Search airlines:")
+    search_title.pack(side="left")
+
+    search_field = ttk.Entry(search_bar, width=40)
+    search_field.pack(side="left", padx=5)
+
+    search_button = ttk.Button(search_bar, text="Search")
+    search_button.pack(side="left")
+
+    show_all_button = ttk.Button(search_bar, text="Show all")
+    show_all_button.pack(side="left", padx=5)
+
+    # Airline list with 2 columns: ID and Company Name
+    list_frame = ttk.Frame(airlines_tab)
+    list_frame.pack(fill="both", expand=True, padx=10)
+
+    columns = ("id", "company")
+    airline_list = ttk.Treeview(list_frame, columns=columns,
+                                show="headings", height=10)
+
+    airline_list.heading("id", text="ID")
+    airline_list.heading("company", text="Company Name")
+
+    airline_list.column("id", width=55, stretch=False)
+    airline_list.column("company", width=300)
+
+    # Scrollbar, so every airline can be reached
+    list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
+                                   command=airline_list.yview)
+    list_scrollbar.pack(side="right", fill="y")
+    airline_list.configure(yscrollcommand=list_scrollbar.set)
+
+    airline_list.pack(side="left", fill="both", expand=True)
+    show_airlines(airline_list, SAMPLE_AIRLINES)
 
 
 def create_main_window():
@@ -253,6 +323,7 @@ def create_main_window():
 
     airlines_tab = ttk.Frame(tab_bar)
     tab_bar.add(airlines_tab, text="Airlines")
+    create_airlines_tab(airlines_tab)
 
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
