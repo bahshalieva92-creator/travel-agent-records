@@ -13,3 +13,4 @@ venv/
 # Windows system files
 Thumbs.db
 desktop.ini
+.venv/
