@@ -120,8 +120,12 @@ def create_clients_tab(clients_tab):
 
     # Clients list with the same 6 columns as my sketch:
     # ID, Name, Address, Phone number, City, Country
+    # A frame holds the list and its scrollbar side by side
+    list_frame = ttk.Frame(clients_tab)
+    list_frame.pack(fill="both", expand=True, padx=10)
+    
     columns = ("id", "name", "address", "phone", "city", "country")
-    client_list = ttk.Treeview(clients_tab, columns=columns,
+    client_list = ttk.Treeview(list_frame, columns=columns,
                                show="headings", height=10)
 
     client_list.heading("id", text="ID")
@@ -137,7 +141,14 @@ def create_clients_tab(clients_tab):
     client_list.column("phone", width=90)
     client_list.column("city", width=70)
     client_list.column("country", width=70)
-    client_list.pack(fill="both", expand=True, padx=10)
+
+    # Scrollbar, so that every client can be chosen
+    list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
+                                   command=client_list.yview)
+    list_scrollbar.pack(side="right", fill="y")
+    client_list.configure(yscrollcommand=list_scrollbar.set)
+
+    client_list.pack(side="left", fill="both", expand=True)
     show_clients(client_list, SAMPLE_CLIENTS)
 
     # Client Details form from my sketch
