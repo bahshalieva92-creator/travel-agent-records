@@ -170,6 +170,25 @@ def create_clients_tab(clients_tab):
     # The ID is shown automatically, so the agent cannot type it
     client_entries["ID"].config(state="readonly")
 
+    # Buttons from my sketch: Delete set apart on the right
+    button_bar = ttk.Frame(clients_tab)
+    button_bar.pack(fill="x", padx=10)
+
+    create_button = ttk.Button(button_bar, text="Create")
+    create_button.pack(side="left", padx=5)
+    update_button = ttk.Button(button_bar, text="Update")
+    update_button.pack(side="left", padx=5)
+    clear_button = ttk.Button(button_bar, text="Clear")
+    clear_button.pack(side="left", padx=5)
+    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button.pack(side="right", padx=5)
+
+    # Message line shows the agent what happened or what to do
+    message_label = ttk.Label(
+        clients_tab,
+        text="Select a client from the list, or fill in the form to add one.")
+    message_label.pack(anchor="w", padx=10, pady=10)
+
 
 def create_main_window():
     """Open the main window with one tab for every type of record."""
@@ -178,7 +197,7 @@ def create_main_window():
     main_window.title("Travel Agent Record Manager")
     main_window.geometry("1000x650")
 
-    # Form titles: the app's normal font, but bigger and bold
+    # Form titles: the app's normal font, but bold
     title_font = font.nametofont("TkDefaultFont").copy()
     title_font.configure(weight="bold")
     style = ttk.Style()
