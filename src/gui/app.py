@@ -5,6 +5,13 @@ from tkinter import ttk
 from tkinter import font
 from datetime import date
 
+# Message colours. Each message also starts with a symbol (✓ success,
+# ✗ error, ⚠ warning), so colour is never the only signal, which helps
+# colour-blind agents.
+SUCCESS_COLOUR = "#1e8e3e"
+ERROR_COLOUR = "#d93025"
+WARNING_COLOUR = "#b06000"
+
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
 SAMPLE_CLIENTS = [
@@ -161,6 +168,18 @@ SAMPLE_FLIGHTS = [
      "Date": "2027-01-20 12:00", "Start City": "Warsaw",
      "End City": "Shanghai"},
 ]
+
+
+def show_message(message_label, text, kind="info"):
+    """Show a message: ✓ success in green, ✗ error in red, ⚠ warning."""
+    if kind == "success":
+        message_label.config(text="✓ " + text, foreground=SUCCESS_COLOUR)
+    elif kind == "error":
+        message_label.config(text="✗ " + text, foreground=ERROR_COLOUR)
+    elif kind == "warning":
+        message_label.config(text="⚠ " + text, foreground=WARNING_COLOUR)
+    else:
+        message_label.config(text=text, foreground="")
 
 
 def records_of_type(records, record_type):
@@ -363,8 +382,8 @@ def create_clients_tab(clients_tab, records):
         client_entries["ID"].config(state="readonly")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
-        message_label.config(text="Form cleared. Fill in the details "
-                                  "to add a new client.")
+        show_message(message_label, "Form cleared. Fill in the details "
+                                    "to add a new client.")
         client_list.selection_remove(client_list.selection())
         
     def fill_form(event):
@@ -382,8 +401,8 @@ def create_clients_tab(clients_tab, records):
                 client_entries["ID"].config(state="readonly")
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
-                message_label.config(text="Showing " + client["Name"] +
-                                     ". Update details and click Update.")
+                show_message(message_label, "Showing " + client["Name"] +
+                             ". Update details and click Update.")
 
     client_list.bind("<<TreeviewSelect>>", fill_form)
 
@@ -501,8 +520,8 @@ def create_airlines_tab(airlines_tab, records):
         airline_entries["ID"].config(state="readonly")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
-        message_label.config(text="Form cleared. Fill in the details "
-                                  "to add a new airline.")
+        show_message(message_label, "Form cleared. Fill in the details "
+                                    "to add a new airline.")
         airline_list.selection_remove(airline_list.selection())
 
     def fill_form(event):
@@ -521,8 +540,8 @@ def create_airlines_tab(airlines_tab, records):
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
                 company_name = airline["Company Name"]
-                message_label.config(text="Showing " + company_name +
-                                     ". Update details and click Update.")
+                show_message(message_label, "Showing " + company_name +
+                             ". Update details and click Update.")
 
     airline_list.bind("<<TreeviewSelect>>", fill_form)
 
@@ -648,10 +667,10 @@ def create_flights_tab(flights_tab, records):
         to_box.set(start_city)
         # Show the new route, or a short message if only one city is filled
         if start_city and end_city:
-            message_label.config(text="Route swapped: " + end_city +
-                                      " → " + start_city + ".")
+            show_message(message_label, "Route swapped: " + end_city +
+                         " → " + start_city + ".", "success")
         else:
-            message_label.config(text="From and To swapped.")
+            show_message(message_label, "From and To swapped.", "success")
 
     from_label = ttk.Label(flight_form, text="From*")
     from_label.grid(row=2, column=0, padx=5, pady=3, sticky="w")
@@ -674,15 +693,14 @@ def create_flights_tab(flights_tab, records):
         """Fill From with the chosen client's city, if From is empty."""
         if from_box.get():
             name = choice_name(client_box.get())
-            message_label.config(text="Client set to " + name + ".")
+            show_message(message_label, "Client set to " + name + ".")
             return
         client_id = int(client_box.get().split(" – ")[0])
         for client in records_of_type(records, "client"):
             if client["ID"] == client_id and client["City"]:
                 from_box.set(client["City"])
-                message_label.config(text="From set to " + client["City"] +
-                                          ", the client's city. Change it "
-                                          "if needed.")
+                show_message(message_label, "From set to " + client["City"] +
+                             ", the client's city. Change it if needed.")
 
     client_box.bind("<<ComboboxSelected>>", client_chosen)
 
@@ -797,8 +815,8 @@ def create_flights_tab(flights_tab, records):
         airline_box.set("")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
-        message_label.config(text="Form cleared. Fill in the details "
-                                  "to add a new flight.")
+        show_message(message_label, "Form cleared. Fill in the details "
+                                    "to add a new flight.")
         flight_list.selection_remove(flight_list.selection())
 
     def fill_form(event):
@@ -822,11 +840,12 @@ def create_flights_tab(flights_tab, records):
                                             flight["Airline_ID"]))
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
-                message_label.config(
-                    text="Showing flight " + str(flight_id) + ": " +
-                         choice_name(client_text) + ", " +
-                         flight["Start City"] + " → " + flight["End City"] +
-                         ". Update details and click Update.")
+                show_message(
+                    message_label,
+                    "Showing flight " + str(flight_id) + ": " +
+                    choice_name(client_text) + ", " +
+                    flight["Start City"] + " → " + flight["End City"] +
+                    ". Update details and click Update.")
 
     flight_list.bind("<<TreeviewSelect>>", fill_form)
 
