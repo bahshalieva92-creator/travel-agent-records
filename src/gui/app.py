@@ -178,6 +178,19 @@ def create_clients_tab(clients_tab):
     client_list.pack(side="left", fill="both", expand=True)
     show_clients(client_list, SAMPLE_CLIENTS)
 
+    # Count under the list, so the agent knows how many clients are shown
+    count_label = ttk.Label(clients_tab)
+    count_label.pack(anchor="w", padx=10)
+
+    def update_count():
+        """Show how many clients are in the list right now."""
+        shown = len(client_list.get_children())
+        total = len(SAMPLE_CLIENTS)
+        count_label.config(text="Showing " + str(shown) + " of " +
+                                str(total) + " clients")
+
+    update_count()
+
     # Client Details form from my sketch
     client_form = ttk.LabelFrame(clients_tab, text="Client Details")
     client_form.pack(fill="x", padx=10, pady=10)
@@ -311,6 +324,19 @@ def create_airlines_tab(airlines_tab):
 
     airline_list.pack(side="left", fill="both", expand=True)
     show_airlines(airline_list, SAMPLE_AIRLINES)
+
+    # Count under the list, so the agent knows how many airlines are shown
+    count_label = ttk.Label(airlines_tab)
+    count_label.pack(anchor="w", padx=10)
+
+    def update_count():
+        """Show how many airlines are in the list right now."""
+        shown = len(airline_list.get_children())
+        total = len(SAMPLE_AIRLINES)
+        count_label.config(text="Showing " + str(shown) + " of " +
+                                str(total) + " airlines")
+
+    update_count()
 
     # Airline Details form, same style as Client Details
     airline_form = ttk.LabelFrame(airlines_tab, text="Airline Details")
