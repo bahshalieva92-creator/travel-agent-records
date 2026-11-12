@@ -754,6 +754,37 @@ def create_flights_tab(flights_tab, records):
     required_note.grid(row=5, column=0, columnspan=4, padx=5, pady=3,
                        sticky="w")
 
+    def refresh_lists():
+        """Rebuild the flight list and drop-downs from the shared records."""
+        clients = records_of_type(records, "client")
+        airlines = records_of_type(records, "airline")
+        flights = records_of_type(records, "flight")
+
+        # Flight list and count, so changed names and new flights show
+        for row in flight_list.get_children():
+            flight_list.delete(row)
+        show_flights(flight_list, flights, clients, airlines)
+        update_count()
+
+        # Drop-down lists, so new or renamed clients and airlines show
+        client_choices.clear()
+        client_choices.extend(make_choices(clients))
+        client_box.config(values=client_choices)
+        airline_choices.clear()
+        airline_choices.extend(make_choices(airlines))
+        airline_box.config(values=airline_choices)
+
+        # City suggestions, so new cities are suggested too
+        new_cities = city_choices(clients, flights)
+        from_box.config(values=new_cities)
+        to_box.config(values=new_cities)
+
+    def tab_opened(event):
+        """Refresh the Flights tab every time it is shown."""
+        refresh_lists()
+
+    flights_tab.bind("<Map>", tab_opened)
+
     def clear_form():
         """Empty the flight form, ready to add a new flight."""
         id_entry.config(state="normal")
