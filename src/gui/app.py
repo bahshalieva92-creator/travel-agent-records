@@ -3,7 +3,8 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font
-from datetime import date
+from tkinter import messagebox
+from datetime import date, datetime
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -16,6 +17,7 @@ WARNING_COLOUR = "#b06000"
 CLIENT_REQUIRED = ["Name", "Phone Number", "Address Line 1", "City",
                    "Country"]
 AIRLINE_REQUIRED = ["Company Name"]
+FLIGHT_REQUIRED = ["Client", "From", "To", "Airline"]
 
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
@@ -212,6 +214,20 @@ def phone_is_valid(phone):
         elif character not in " +-()":
             return False
     return has_digit
+
+
+def real_date(year, month, day, hour, minute):
+    """Give the date and time, or None if the date does not exist."""
+    try:
+        return datetime(year, month, day, hour, minute)
+    except ValueError:
+        return None
+
+
+def date_in_words(year, month, day):
+    """Write a date the way people say it, for example 11 November 2026."""
+    month_name = date(year, month, 1).strftime("%B")
+    return str(day) + " " + month_name + " " + str(year)
 
 
 def records_of_type(records, record_type):
@@ -942,13 +958,78 @@ def create_flights_tab(flights_tab, records):
 
     flight_list.bind("<<TreeviewSelect>>", fill_form)
 
+    # The boxes that must be filled in, by the names used in messages
+    flight_boxes = {"Client": client_box, "From": from_box, "To": to_box,
+                    "Airline": airline_box}
+
+    def past_date_confirmed(flight_time):
+        """Ask before saving a flight in the past, as it may be a mistake."""
+        when = (date_in_words(flight_time.year, flight_time.month,
+                              flight_time.day) +
+                " at " + flight_time.strftime("%H:%M"))
+        answer = messagebox.askyesno(
+            "Flight in the past",
+            "This flight is on " + when + ", which is in the past. " +
+            "Save it anyway?",
+            icon="warning", default="no", parent=flights_tab)
+        if not answer:
+            show_message(message_label, "Not saved. Change the date or "
+                         "time and try again.", "warning")
+            day_box.focus_set()
+        return answer
+
+    def check_form():
+        """Check the form and point to the first problem, if any."""
+        values = read_entries(flight_boxes)
+        missing = first_missing_field(values, FLIGHT_REQUIRED)
+        if missing:
+            show_message(message_label, missing + " is required.", "error")
+            flight_boxes[missing].focus_set()
+            return False
+        if values["From"].lower() == values["To"].lower():
+            show_message(message_label, "From and To must be different "
+                         "cities.", "error")
+            to_box.focus_set()
+            return False
+        year = int(year_box.get())
+        month = int(month_box.get())
+        day = int(day_box.get())
+        flight_time = real_date(year, month, day, int(hour_box.get()),
+                                int(minute_box.get()))
+        if flight_time is None:
+            show_message(message_label, date_in_words(year, month, day) +
+                         " is not a real date.", "error")
+            day_box.focus_set()
+            return False
+        if flight_time < datetime.now():
+            return past_date_confirmed(flight_time)
+        return True
+
+    def create_flight():
+        """Check the form, then add it as a new flight."""
+        if check_form():
+            # To connect: create_record(records, new_flight) from records.py
+            show_message(message_label, "The details are valid. Saving will "
+                         "work once the record functions are connected.",
+                         "success")
+
+    def update_flight():
+        """Check the form, then save the changes to the chosen flight."""
+        if check_form():
+            # To connect: update_record(records, "flight", ID, new_values)
+            show_message(message_label, "The details are valid. Saving will "
+                         "work once the record functions are connected.",
+                         "success")
+
     # Buttons in the same places as on the other tabs
     button_bar = ttk.Frame(flights_tab)
     button_bar.pack(fill="x", padx=10)
 
-    create_button = ttk.Button(button_bar, text="Create")
+    create_button = ttk.Button(button_bar, text="Create",
+                               command=create_flight)
     create_button.pack(side="left", padx=5)
-    update_button = ttk.Button(button_bar, text="Update")
+    update_button = ttk.Button(button_bar, text="Update",
+                               command=update_flight)
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
