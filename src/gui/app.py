@@ -298,6 +298,47 @@ def create_airlines_tab(airlines_tab):
     airline_list.pack(side="left", fill="both", expand=True)
     show_airlines(airline_list, SAMPLE_AIRLINES)
 
+    # Airline Details form, same style as Client Details
+    airline_form = ttk.LabelFrame(airlines_tab, text="Airline Details")
+    airline_form.pack(fill="x", padx=10, pady=10)
+
+    # Each field contains field name, label text, row, column
+    form_fields = [
+        ("ID", "ID (automatic)", 0, 0),
+        ("Company Name", "Company Name*", 1, 0),
+    ]
+
+    airline_entries = {}
+    for field, text, row, column in form_fields:
+        label = ttk.Label(airline_form, text=text)
+        label.grid(row=row, column=column, padx=5, pady=3, sticky="w")
+        entry = ttk.Entry(airline_form, width=30)
+        entry.grid(row=row, column=column + 1, padx=5, pady=3)
+        airline_entries[field] = entry
+
+    # The ID is shown automatically, so the agent cannot type it
+    airline_entries["ID"].config(state="readonly")
+
+    # Buttons in the same places as on the Clients tab
+    button_bar = ttk.Frame(airlines_tab)
+    button_bar.pack(fill="x", padx=10)
+
+    create_button = ttk.Button(button_bar, text="Create")
+    create_button.pack(side="left", padx=5)
+    update_button = ttk.Button(button_bar, text="Update")
+    update_button.pack(side="left", padx=5)
+    clear_button = ttk.Button(button_bar, text="Clear")
+    clear_button.pack(side="left", padx=5)
+    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button.pack(side="right", padx=5)
+
+    # Message line shows the agent what happened or what to do
+    message_label = ttk.Label(
+        airlines_tab,
+        text="Select an airline from the list, "
+             "or fill in the form to add one.")
+    message_label.pack(anchor="w", padx=10, pady=10)
+
 
 def create_main_window():
     """Open the main window with one tab for every type of record."""
