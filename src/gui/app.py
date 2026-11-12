@@ -619,6 +619,15 @@ def create_clients_tab(clients_tab, records):
     search_button.config(command=run_search)
     search_field.bind("<KeyRelease>", run_search)
 
+    # Show all and the Esc key empty the search box and show every client
+    def show_all(event=None):
+        """Empty the search box and show every client again."""
+        search_field.delete(0, "end")
+        run_search()
+
+    show_all_button.config(command=show_all)
+    search_field.bind("<Escape>", show_all)
+
     # Remember the starting form, so changes can be spotted
     remember_form()
 
@@ -851,6 +860,15 @@ def create_airlines_tab(airlines_tab, records):
 
     search_button.config(command=run_search)
     search_field.bind("<KeyRelease>", run_search)
+
+    # Show all and the Esc key empty the search box and show every airline
+    def show_all(event=None):
+        """Empty the search box and show every airline again."""
+        search_field.delete(0, "end")
+        run_search()
+
+    show_all_button.config(command=show_all)
+    search_field.bind("<Escape>", show_all)
 
     # Remember the starting form, so changes can be spotted
     remember_form()
@@ -1291,6 +1309,15 @@ def create_flights_tab(flights_tab, records):
 
     search_button.config(command=run_search)
     search_field.bind("<KeyRelease>", run_search)
+
+    # Show all and the Esc key empty the search box and show every flight
+    def show_all(event=None):
+        """Empty the search box and show every flight again."""
+        search_field.delete(0, "end")
+        run_search()
+
+    show_all_button.config(command=show_all)
+    search_field.bind("<Escape>", show_all)
 
     # Remember the starting form, so changes can be spotted
     remember_form()
