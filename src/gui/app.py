@@ -177,6 +177,32 @@ def show_airlines(airline_list, airlines):
             airline["ID"], airline["Company Name"]))
 
 
+def flight_date(flight):
+    """Give the date of a flight, so flights can be sorted by date."""
+    return flight["Date"]
+
+
+def show_flights(flight_list, flights, clients, airlines):
+    """Show each flight as a row, soonest first, with names not IDs."""
+    client_names = {}
+    for client in clients:
+        client_names[client["ID"]] = client["Name"]
+    airline_names = {}
+    for airline in airlines:
+        airline_names[airline["ID"]] = airline["Company Name"]
+
+    for flight in sorted(flights, key=flight_date):
+        client_id = flight["Client_ID"]
+        airline_id = flight["Airline_ID"]
+        client_text = "Client not found (ID " + str(client_id) + ")"
+        airline_text = "Airline not found (ID " + str(airline_id) + ")"
+        flight_list.insert("", "end", iid=flight["ID"], values=(
+            flight["ID"], flight["Date"],
+            client_names.get(client_id, client_text),
+            airline_names.get(airline_id, airline_text),
+            flight["Start City"], flight["End City"]))
+
+
 def create_clients_tab(clients_tab):
     """Create search bar and the clients list on the Clients tab."""
 
@@ -474,6 +500,70 @@ def create_airlines_tab(airlines_tab):
     message_label.pack(anchor="w", padx=10, pady=10)
 
 
+def create_flights_tab(flights_tab):
+    """Create the search bar and the flight list on the Flights tab."""
+
+    # Search bar with Search and Show all buttons, same as on the other tabs
+    search_bar = ttk.Frame(flights_tab)
+    search_bar.pack(fill="x", padx=10, pady=10)
+
+    search_title = ttk.Label(search_bar, text="Search flights:")
+    search_title.pack(side="left")
+
+    search_field = ttk.Entry(search_bar, width=40)
+    search_field.pack(side="left", padx=5)
+
+    search_button = ttk.Button(search_bar, text="Search")
+    search_button.pack(side="left")
+
+    show_all_button = ttk.Button(search_bar, text="Show all")
+    show_all_button.pack(side="left", padx=5)
+
+    # Flight list with names instead of ID numbers, soonest flight first
+    list_frame = ttk.Frame(flights_tab)
+    list_frame.pack(fill="both", expand=True, padx=10)
+
+    columns = ("id", "date", "client", "airline", "from", "to")
+    flight_list = ttk.Treeview(list_frame, columns=columns,
+                               show="headings", height=10)
+
+    flight_list.heading("id", text="ID")
+    flight_list.heading("date", text="Date & Time")
+    flight_list.heading("client", text="Client")
+    flight_list.heading("airline", text="Airline")
+    flight_list.heading("from", text="From")
+    flight_list.heading("to", text="To")
+
+    flight_list.column("id", width=55, stretch=False)
+    flight_list.column("date", width=120)
+    flight_list.column("client", width=190)
+    flight_list.column("airline", width=160)
+    flight_list.column("from", width=120)
+    flight_list.column("to", width=120)
+
+    # Scrollbar, so every flight can be reached
+    list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
+                                   command=flight_list.yview)
+    list_scrollbar.pack(side="right", fill="y")
+    flight_list.configure(yscrollcommand=list_scrollbar.set)
+
+    flight_list.pack(side="left", fill="both", expand=True)
+    show_flights(flight_list, SAMPLE_FLIGHTS, SAMPLE_CLIENTS, SAMPLE_AIRLINES)
+
+    # Count under the list, so the agent knows how many flights are shown
+    count_label = ttk.Label(flights_tab)
+    count_label.pack(anchor="w", padx=10)
+
+    def update_count():
+        """Show how many flights are in the list right now."""
+        shown = len(flight_list.get_children())
+        total = len(SAMPLE_FLIGHTS)
+        count_label.config(text="Showing " + str(shown) + " of " +
+                                str(total) + " flights")
+
+    update_count()
+
+
 def create_main_window():
     """Open the main window with one tab for every type of record."""
 
@@ -502,6 +592,7 @@ def create_main_window():
 
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
+    create_flights_tab(flights_tab)
 
     return main_window
 
