@@ -214,6 +214,8 @@ def create_clients_tab(clients_tab):
             entry.config(state="normal")
             entry.delete(0, "end")
         client_entries["ID"].config(state="readonly")
+        update_button.config(state="disabled")
+        delete_button.config(state="disabled")
         message_label.config(text="Form cleared. Fill in the details "
                                   "to add a new client.")
         client_list.selection_remove(client_list.selection())
@@ -231,6 +233,8 @@ def create_clients_tab(clients_tab):
                     entry.delete(0, "end")
                     entry.insert(0, client[field])
                 client_entries["ID"].config(state="readonly")
+                update_button.config(state="normal")
+                delete_button.config(state="normal")
                 message_label.config(text="Showing " + client["Name"] +
                                      ". Update details and click Update.")
 
@@ -248,6 +252,10 @@ def create_clients_tab(clients_tab):
     clear_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete")
     delete_button.pack(side="right", padx=5)
+
+    # Update and Delete stay greyed out until a record is selected
+    update_button.config(state="disabled")
+    delete_button.config(state="disabled")
 
     # Message line shows the agent what happened or what to do
     message_label = ttk.Label(
@@ -325,6 +333,8 @@ def create_airlines_tab(airlines_tab):
             entry.config(state="normal")
             entry.delete(0, "end")
         airline_entries["ID"].config(state="readonly")
+        update_button.config(state="disabled")
+        delete_button.config(state="disabled")
         message_label.config(text="Form cleared. Fill in the details "
                                   "to add a new airline.")
         airline_list.selection_remove(airline_list.selection())
@@ -342,6 +352,8 @@ def create_airlines_tab(airlines_tab):
                     entry.delete(0, "end")
                     entry.insert(0, airline[field])
                 airline_entries["ID"].config(state="readonly")
+                update_button.config(state="normal")
+                delete_button.config(state="normal")
                 company_name = airline["Company Name"]
                 message_label.config(text="Showing " + company_name +
                                      ". Update details and click Update.")
@@ -360,6 +372,10 @@ def create_airlines_tab(airlines_tab):
     clear_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete")
     delete_button.pack(side="right", padx=5)
+
+    # Update and Delete stay greyed out until a record is selected
+    update_button.config(state="disabled")
+    delete_button.config(state="disabled")
 
     # Message line shows the agent what happened or what to do
     message_label = ttk.Label(
