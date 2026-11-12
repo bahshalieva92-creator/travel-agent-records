@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font
+from datetime import date
 
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
@@ -180,6 +181,21 @@ def show_airlines(airline_list, airlines):
 def flight_date(flight):
     """Give the date of a flight, so flights can be sorted by date."""
     return flight["Date"]
+
+
+def record_name(record):
+    """Give the name of a client or airline, so they can be sorted."""
+    if record["Type"] == "airline":
+        return record["Company Name"]
+    return record["Name"]
+
+
+def make_choices(records):
+    """Make the "ID – name" choices for a drop-down list, sorted by name."""
+    choices = []
+    for record in sorted(records, key=record_name):
+        choices.append(str(record["ID"]) + " – " + record_name(record))
+    return choices
 
 
 def show_flights(flight_list, flights, clients, airlines):
@@ -562,6 +578,77 @@ def create_flights_tab(flights_tab):
                                 str(total) + " flights")
 
     update_count()
+
+    # Flight Details form from my sketch
+    flight_form = ttk.LabelFrame(flights_tab, text="Flight Details")
+    flight_form.pack(fill="x", padx=10, pady=10)
+
+    # The ID is shown automatically, so the agent cannot type it
+    id_label = ttk.Label(flight_form, text="ID (automatic)")
+    id_label.grid(row=0, column=0, padx=5, pady=3, sticky="w")
+    id_entry = ttk.Entry(flight_form, width=34, state="readonly")
+    id_entry.grid(row=0, column=1, padx=5, pady=3, sticky="w")
+
+    # Drop-down lists, so the agent can only pick a real client and airline
+    client_label = ttk.Label(flight_form, text="Client*")
+    client_label.grid(row=1, column=0, padx=5, pady=3, sticky="w")
+    client_box = ttk.Combobox(flight_form, width=32, state="readonly",
+                              values=make_choices(SAMPLE_CLIENTS))
+    client_box.grid(row=1, column=1, padx=5, pady=3, sticky="w")
+
+    airline_label = ttk.Label(flight_form, text="Airline*")
+    airline_label.grid(row=2, column=0, padx=5, pady=3, sticky="w")
+    airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
+                               values=make_choices(SAMPLE_AIRLINES))
+    airline_box.grid(row=2, column=1, padx=5, pady=3, sticky="w")
+
+    # Arrow boxes for the date in the same order as the list (year, month,
+    # day), so the agent cannot type an impossible date like month 13
+    today = date.today()
+
+    date_label = ttk.Label(flight_form, text="Date*")
+    date_label.grid(row=0, column=2, padx=5, pady=3, sticky="w")
+    date_boxes = ttk.Frame(flight_form)
+    date_boxes.grid(row=0, column=3, padx=5, pady=3, sticky="w")
+
+    year_box = ttk.Spinbox(date_boxes, from_=today.year, to=today.year + 4,
+                           width=5, state="readonly")
+    year_box.pack(side="left")
+    year_dash = ttk.Label(date_boxes, text="-")
+    year_dash.pack(side="left")
+    month_box = ttk.Spinbox(date_boxes, from_=1, to=12, width=3,
+                            format="%02.0f", wrap=True, state="readonly")
+    month_box.pack(side="left")
+    month_dash = ttk.Label(date_boxes, text="-")
+    month_dash.pack(side="left")
+    day_box = ttk.Spinbox(date_boxes, from_=1, to=31, width=3,
+                          format="%02.0f", wrap=True, state="readonly")
+    day_box.pack(side="left")
+
+    # Arrow boxes for the time on the 24-hour clock, minutes in steps of 5
+    time_label = ttk.Label(flight_form, text="Time*")
+    time_label.grid(row=1, column=2, padx=5, pady=3, sticky="w")
+    time_boxes = ttk.Frame(flight_form)
+    time_boxes.grid(row=1, column=3, padx=5, pady=3, sticky="w")
+
+    hour_box = ttk.Spinbox(time_boxes, from_=0, to=23, width=3,
+                           format="%02.0f", wrap=True, state="readonly")
+    hour_box.pack(side="left")
+    time_colon = ttk.Label(time_boxes, text=":")
+    time_colon.pack(side="left")
+    minute_box = ttk.Spinbox(time_boxes, from_=0, to=55, increment=5,
+                             width=3, format="%02.0f", wrap=True,
+                             state="readonly")
+    minute_box.pack(side="left")
+    time_hint = ttk.Label(time_boxes, text="(24-hour)")
+    time_hint.pack(side="left", padx=5)
+
+    # Start with today's date at 12:00, so the agent only changes what differs
+    year_box.set(today.strftime("%Y"))
+    month_box.set(today.strftime("%m"))
+    day_box.set(today.strftime("%d"))
+    hour_box.set("12")
+    minute_box.set("00")
 
 
 def create_main_window():
