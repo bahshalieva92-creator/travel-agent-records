@@ -656,6 +656,24 @@ def create_flights_tab(flights_tab):
     to_box = ttk.Combobox(flight_form, width=26, values=cities)
     to_box.grid(row=2, column=3, padx=5, pady=3, sticky="w")
 
+    # Smart default: choosing a client fills From with the client's city,
+    # but only if From is still empty, so the agent's typing is never lost
+    def client_chosen(event):
+        """Fill From with the chosen client's city, if From is empty."""
+        if from_box.get():
+            name = choice_name(client_box.get())
+            message_label.config(text="Client set to " + name + ".")
+            return
+        client_id = int(client_box.get().split(" – ")[0])
+        for client in SAMPLE_CLIENTS:
+            if client["ID"] == client_id and client["City"]:
+                from_box.set(client["City"])
+                message_label.config(text="From set to " + client["City"] +
+                                          ", the client's city. Change it "
+                                          "if needed.")
+
+    client_box.bind("<<ComboboxSelected>>", client_chosen)
+
     # When: arrow boxes for the date in the same order as the list (year,
     # month, day), so the agent cannot type an impossible date like month 13
     today = date.today()
