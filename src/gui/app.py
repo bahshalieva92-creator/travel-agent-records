@@ -208,6 +208,12 @@ def create_clients_tab(clients_tab):
     # The ID is shown automatically, so the agent cannot type it
     client_entries["ID"].config(state="readonly")
 
+    # Note that explains the stars on the labels
+    required_note = ttk.Label(client_form,
+                              text="Fields marked * are required.")
+    required_note.grid(row=5, column=0, columnspan=4, padx=5, pady=3,
+                       sticky="w")
+
     def clear_form():
         """Clear every box in the form."""
         for entry in client_entries.values():
@@ -326,6 +332,12 @@ def create_airlines_tab(airlines_tab):
 
     # The ID is shown automatically, so the agent cannot type it
     airline_entries["ID"].config(state="readonly")
+
+    # Note that explains the stars on the labels
+    required_note = ttk.Label(airline_form,
+                              text="Fields marked * are required.")
+    required_note.grid(row=2, column=0, columnspan=4, padx=5, pady=3,
+                       sticky="w")
 
     def clear_form():
         """Clear every box in the airline form."""
