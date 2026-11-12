@@ -12,6 +12,11 @@ SUCCESS_COLOUR = "#1e8e3e"
 ERROR_COLOUR = "#d93025"
 WARNING_COLOUR = "#b06000"
 
+# Fields that must be filled in, as agreed in the decisions file
+CLIENT_REQUIRED = ["Name", "Phone Number", "Address Line 1", "City",
+                   "Country"]
+AIRLINE_REQUIRED = ["Company Name"]
+
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
 SAMPLE_CLIENTS = [
@@ -180,6 +185,33 @@ def show_message(message_label, text, kind="info"):
         message_label.config(text="⚠ " + text, foreground=WARNING_COLOUR)
     else:
         message_label.config(text=text, foreground="")
+
+
+def read_entries(entries):
+    """Read every box in a form, with spaces trimmed from both ends."""
+    values = {}
+    for field, entry in entries.items():
+        values[field] = entry.get().strip()
+    return values
+
+
+def first_missing_field(values, required_fields):
+    """Give the first required field that is empty, or "" if none is."""
+    for field in required_fields:
+        if values[field] == "":
+            return field
+    return ""
+
+
+def phone_is_valid(phone):
+    """Check a phone number has digits and only digits, spaces, + - ( )."""
+    has_digit = False
+    for character in phone:
+        if character.isdigit():
+            has_digit = True
+        elif character not in " +-()":
+            return False
+    return has_digit
 
 
 def records_of_type(records, record_type):
@@ -406,13 +438,46 @@ def create_clients_tab(clients_tab, records):
 
     client_list.bind("<<TreeviewSelect>>", fill_form)
 
+    def check_form():
+        """Check the form and point to the first problem, if any."""
+        values = read_entries(client_entries)
+        missing = first_missing_field(values, CLIENT_REQUIRED)
+        if missing:
+            show_message(message_label, missing + " is required.", "error")
+            client_entries[missing].focus_set()
+            return False
+        if not phone_is_valid(values["Phone Number"]):
+            show_message(message_label, "Phone Number can only have digits, "
+                         "spaces and + - ( ).", "error")
+            client_entries["Phone Number"].focus_set()
+            return False
+        return True
+
+    def create_client():
+        """Check the form, then add it as a new client."""
+        if check_form():
+            # To connect: create_record(records, new_client) from records.py
+            show_message(message_label, "The details are valid. Saving will "
+                         "work once the record functions are connected.",
+                         "success")
+
+    def update_client():
+        """Check the form, then save the changes to the chosen client."""
+        if check_form():
+            # To connect: update_record(records, "client", ID, new_values)
+            show_message(message_label, "The details are valid. Saving will "
+                         "work once the record functions are connected.",
+                         "success")
+
     # Buttons from my sketch: Delete set apart on the right
     button_bar = ttk.Frame(clients_tab)
     button_bar.pack(fill="x", padx=10)
 
-    create_button = ttk.Button(button_bar, text="Create")
+    create_button = ttk.Button(button_bar, text="Create",
+                               command=create_client)
     create_button.pack(side="left", padx=5)
-    update_button = ttk.Button(button_bar, text="Update")
+    update_button = ttk.Button(button_bar, text="Update",
+                               command=update_client)
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
@@ -545,13 +610,41 @@ def create_airlines_tab(airlines_tab, records):
 
     airline_list.bind("<<TreeviewSelect>>", fill_form)
 
+    def check_form():
+        """Check the form and point to the first problem, if any."""
+        values = read_entries(airline_entries)
+        missing = first_missing_field(values, AIRLINE_REQUIRED)
+        if missing:
+            show_message(message_label, missing + " is required.", "error")
+            airline_entries[missing].focus_set()
+            return False
+        return True
+
+    def create_airline():
+        """Check the form, then add it as a new airline."""
+        if check_form():
+            # To connect: create_record(records, new_airline) from records.py
+            show_message(message_label, "The details are valid. Saving will "
+                         "work once the record functions are connected.",
+                         "success")
+
+    def update_airline():
+        """Check the form, then save the changes to the chosen airline."""
+        if check_form():
+            # To connect: update_record(records, "airline", ID, new_values)
+            show_message(message_label, "The details are valid. Saving will "
+                         "work once the record functions are connected.",
+                         "success")
+
     # Buttons in the same places as on the Clients tab
     button_bar = ttk.Frame(airlines_tab)
     button_bar.pack(fill="x", padx=10)
 
-    create_button = ttk.Button(button_bar, text="Create")
+    create_button = ttk.Button(button_bar, text="Create",
+                               command=create_airline)
     create_button.pack(side="left", padx=5)
-    update_button = ttk.Button(button_bar, text="Update")
+    update_button = ttk.Button(button_bar, text="Update",
+                               command=update_airline)
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
