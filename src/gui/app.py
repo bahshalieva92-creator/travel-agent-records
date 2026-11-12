@@ -198,6 +198,20 @@ def make_choices(records):
     return choices
 
 
+def find_choice(choices, record_id):
+    """Find the "ID – name" choice for this ID, or "" if there is none."""
+    start = str(record_id) + " – "
+    for choice in choices:
+        if choice.startswith(start):
+            return choice
+    return ""
+
+
+def choice_name(choice):
+    """Give the name part of an "ID – name" choice."""
+    return choice.split(" – ", 1)[-1]
+
+
 def city_choices(clients, flights):
     """Make the city suggestions: every city already used, sorted A-Z."""
     cities = set()
@@ -605,8 +619,9 @@ def create_flights_tab(flights_tab):
     # Who: a drop-down list, so the agent can only pick a real client
     client_label = ttk.Label(flight_form, text="Client*")
     client_label.grid(row=1, column=0, padx=5, pady=3, sticky="w")
+    client_choices = make_choices(SAMPLE_CLIENTS)
     client_box = ttk.Combobox(flight_form, width=32, state="readonly",
-                              values=make_choices(SAMPLE_CLIENTS))
+                              values=client_choices)
     client_box.grid(row=1, column=1, padx=5, pady=3, sticky="w")
 
     # Where: city boxes suggest every city already used, but a new one can
@@ -682,19 +697,25 @@ def create_flights_tab(flights_tab):
     time_hint = ttk.Label(time_boxes, text="(24-hour)")
     time_hint.pack(side="left", padx=5)
 
+    def show_date_and_time(date_text):
+        """Put a "YYYY-MM-DD HH:MM" date and time into the arrow boxes."""
+        year_box.set(date_text[0:4])
+        month_box.set(date_text[5:7])
+        day_box.set(date_text[8:10])
+        hour_box.set(date_text[11:13])
+        minute_box.set(date_text[14:16])
+
     # Start with today's date at 12:00, so the agent only changes what differs
-    year_box.set(today.strftime("%Y"))
-    month_box.set(today.strftime("%m"))
-    day_box.set(today.strftime("%d"))
-    hour_box.set("12")
-    minute_box.set("00")
+    start_date = today.strftime("%Y-%m-%d") + " 12:00"
+    show_date_and_time(start_date)
 
     # Which airline: last, because it is chosen once the route and time are
     # known. A drop-down list, so the agent can only pick a real airline.
     airline_label = ttk.Label(flight_form, text="Airline*")
     airline_label.grid(row=4, column=0, padx=5, pady=3, sticky="w")
+    airline_choices = make_choices(SAMPLE_AIRLINES)
     airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
-                               values=make_choices(SAMPLE_AIRLINES))
+                               values=airline_choices)
     airline_box.grid(row=4, column=1, padx=5, pady=3, sticky="w")
 
     # Note that explains the stars on the labels
@@ -702,6 +723,51 @@ def create_flights_tab(flights_tab):
                               text="Fields marked * are required.")
     required_note.grid(row=5, column=0, columnspan=4, padx=5, pady=3,
                        sticky="w")
+
+    def clear_form():
+        """Empty the flight form, ready to add a new flight."""
+        id_entry.config(state="normal")
+        id_entry.delete(0, "end")
+        id_entry.config(state="readonly")
+        client_box.set("")
+        from_box.set("")
+        to_box.set("")
+        show_date_and_time(start_date)
+        airline_box.set("")
+        update_button.config(state="disabled")
+        delete_button.config(state="disabled")
+        message_label.config(text="Form cleared. Fill in the details "
+                                  "to add a new flight.")
+        flight_list.selection_remove(flight_list.selection())
+
+    def fill_form(event):
+        """Show the details of the chosen flight in the form."""
+        selected = flight_list.selection()
+        if not selected:
+            return
+        flight_id = int(selected[0])
+        for flight in SAMPLE_FLIGHTS:
+            if flight["ID"] == flight_id:
+                id_entry.config(state="normal")
+                id_entry.delete(0, "end")
+                id_entry.insert(0, flight["ID"])
+                id_entry.config(state="readonly")
+                client_text = find_choice(client_choices, flight["Client_ID"])
+                client_box.set(client_text)
+                from_box.set(flight["Start City"])
+                to_box.set(flight["End City"])
+                show_date_and_time(flight["Date"])
+                airline_box.set(find_choice(airline_choices,
+                                            flight["Airline_ID"]))
+                update_button.config(state="normal")
+                delete_button.config(state="normal")
+                message_label.config(
+                    text="Showing flight " + str(flight_id) + ": " +
+                         choice_name(client_text) + ", " +
+                         flight["Start City"] + " → " + flight["End City"] +
+                         ". Update details and click Update.")
+
+    flight_list.bind("<<TreeviewSelect>>", fill_form)
 
     # Buttons in the same places as on the other tabs
     button_bar = ttk.Frame(flights_tab)
@@ -711,7 +777,7 @@ def create_flights_tab(flights_tab):
     create_button.pack(side="left", padx=5)
     update_button = ttk.Button(button_bar, text="Update")
     update_button.pack(side="left", padx=5)
-    clear_button = ttk.Button(button_bar, text="Clear")
+    clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete")
     delete_button.pack(side="right", padx=5)
