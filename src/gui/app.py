@@ -619,6 +619,12 @@ def create_flights_tab(flights_tab):
         end_city = to_box.get()
         from_box.set(end_city)
         to_box.set(start_city)
+        # Show the new route, or a short message if only one city is filled
+        if start_city and end_city:
+            message_label.config(text="Route swapped: " + end_city +
+                                      " → " + start_city + ".")
+        else:
+            message_label.config(text="From and To swapped.")
 
     from_label = ttk.Label(flight_form, text="From*")
     from_label.grid(row=2, column=0, padx=5, pady=3, sticky="w")
@@ -690,6 +696,35 @@ def create_flights_tab(flights_tab):
     airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
                                values=make_choices(SAMPLE_AIRLINES))
     airline_box.grid(row=4, column=1, padx=5, pady=3, sticky="w")
+
+    # Note that explains the stars on the labels
+    required_note = ttk.Label(flight_form,
+                              text="Fields marked * are required.")
+    required_note.grid(row=5, column=0, columnspan=4, padx=5, pady=3,
+                       sticky="w")
+
+    # Buttons in the same places as on the other tabs
+    button_bar = ttk.Frame(flights_tab)
+    button_bar.pack(fill="x", padx=10)
+
+    create_button = ttk.Button(button_bar, text="Create")
+    create_button.pack(side="left", padx=5)
+    update_button = ttk.Button(button_bar, text="Update")
+    update_button.pack(side="left", padx=5)
+    clear_button = ttk.Button(button_bar, text="Clear")
+    clear_button.pack(side="left", padx=5)
+    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button.pack(side="right", padx=5)
+
+    # Update and Delete stay greyed out until a record is selected
+    update_button.config(state="disabled")
+    delete_button.config(state="disabled")
+
+    # Message line shows the agent what happened or what to do
+    message_label = ttk.Label(
+        flights_tab,
+        text="Select a flight from the list, or fill in the form to add one.")
+    message_label.pack(anchor="w", padx=10, pady=10)
 
 
 def create_main_window():
