@@ -163,6 +163,15 @@ SAMPLE_FLIGHTS = [
 ]
 
 
+def records_of_type(records, record_type):
+    """Give only the records of one type, for example all the clients."""
+    chosen = []
+    for record in records:
+        if record["Type"] == record_type:
+            chosen.append(record)
+    return chosen
+
+
 def show_clients(client_list, clients):
     """Show each client as a separate new row in the list."""
     for client in clients:
@@ -245,8 +254,8 @@ def show_flights(flight_list, flights, clients, airlines):
             flight["Start City"], flight["End City"]))
 
 
-def create_clients_tab(clients_tab):
-    """Create search bar and the clients list on the Clients tab."""
+def create_clients_tab(clients_tab, records):
+    """Create the Clients tab: search bar, list, form, buttons, message."""
 
     # Search bar with Search and Show all buttons
     search_bar = ttk.Frame(clients_tab)
@@ -295,7 +304,7 @@ def create_clients_tab(clients_tab):
     client_list.configure(yscrollcommand=list_scrollbar.set)
 
     client_list.pack(side="left", fill="both", expand=True)
-    show_clients(client_list, SAMPLE_CLIENTS)
+    show_clients(client_list, records_of_type(records, "client"))
 
     # Count under the list, so the agent knows how many clients are shown
     count_label = ttk.Label(clients_tab)
@@ -304,7 +313,7 @@ def create_clients_tab(clients_tab):
     def update_count():
         """Show how many clients are in the list right now."""
         shown = len(client_list.get_children())
-        total = len(SAMPLE_CLIENTS)
+        total = len(records_of_type(records, "client"))
         count_label.config(text="Showing " + str(shown) + " of " +
                                 str(total) + " clients")
 
@@ -364,7 +373,7 @@ def create_clients_tab(clients_tab):
         if not selected:
             return
         client_id = int(selected[0])
-        for client in SAMPLE_CLIENTS:
+        for client in records_of_type(records, "client"):
             if client["ID"] == client_id:
                 for field, entry in client_entries.items():
                     entry.config(state="normal")
@@ -402,8 +411,8 @@ def create_clients_tab(clients_tab):
     message_label.pack(anchor="w", padx=10, pady=10)
     
 
-def create_airlines_tab(airlines_tab):
-    """Create the search bar and the airline list on the Airlines tab."""
+def create_airlines_tab(airlines_tab, records):
+    """Create the Airlines tab: search bar, list, form, buttons, message."""
 
     # Search bar with Search and Show all buttons, same as on Clients
     search_bar = ttk.Frame(airlines_tab)
@@ -442,7 +451,7 @@ def create_airlines_tab(airlines_tab):
     airline_list.configure(yscrollcommand=list_scrollbar.set)
 
     airline_list.pack(side="left", fill="both", expand=True)
-    show_airlines(airline_list, SAMPLE_AIRLINES)
+    show_airlines(airline_list, records_of_type(records, "airline"))
 
     # Count under the list, so the agent knows how many airlines are shown
     count_label = ttk.Label(airlines_tab)
@@ -451,7 +460,7 @@ def create_airlines_tab(airlines_tab):
     def update_count():
         """Show how many airlines are in the list right now."""
         shown = len(airline_list.get_children())
-        total = len(SAMPLE_AIRLINES)
+        total = len(records_of_type(records, "airline"))
         count_label.config(text="Showing " + str(shown) + " of " +
                                 str(total) + " airlines")
 
@@ -502,7 +511,7 @@ def create_airlines_tab(airlines_tab):
         if not selected:
             return
         airline_id = int(selected[0])
-        for airline in SAMPLE_AIRLINES:
+        for airline in records_of_type(records, "airline"):
             if airline["ID"] == airline_id:
                 for field, entry in airline_entries.items():
                     entry.config(state="normal")
@@ -542,8 +551,8 @@ def create_airlines_tab(airlines_tab):
     message_label.pack(anchor="w", padx=10, pady=10)
 
 
-def create_flights_tab(flights_tab):
-    """Create the search bar and the flight list on the Flights tab."""
+def create_flights_tab(flights_tab, records):
+    """Create the Flights tab: search bar, list, form, buttons, message."""
 
     # Search bar with Search and Show all buttons, same as on the other tabs
     search_bar = ttk.Frame(flights_tab)
@@ -590,7 +599,9 @@ def create_flights_tab(flights_tab):
     flight_list.configure(yscrollcommand=list_scrollbar.set)
 
     flight_list.pack(side="left", fill="both", expand=True)
-    show_flights(flight_list, SAMPLE_FLIGHTS, SAMPLE_CLIENTS, SAMPLE_AIRLINES)
+    show_flights(flight_list, records_of_type(records, "flight"),
+                 records_of_type(records, "client"),
+                 records_of_type(records, "airline"))
 
     # Count under the list, so the agent knows how many flights are shown
     count_label = ttk.Label(flights_tab)
@@ -599,7 +610,7 @@ def create_flights_tab(flights_tab):
     def update_count():
         """Show how many flights are in the list right now."""
         shown = len(flight_list.get_children())
-        total = len(SAMPLE_FLIGHTS)
+        total = len(records_of_type(records, "flight"))
         count_label.config(text="Showing " + str(shown) + " of " +
                                 str(total) + " flights")
 
@@ -619,14 +630,15 @@ def create_flights_tab(flights_tab):
     # Who: a drop-down list, so the agent can only pick a real client
     client_label = ttk.Label(flight_form, text="Client*")
     client_label.grid(row=1, column=0, padx=5, pady=3, sticky="w")
-    client_choices = make_choices(SAMPLE_CLIENTS)
+    client_choices = make_choices(records_of_type(records, "client"))
     client_box = ttk.Combobox(flight_form, width=32, state="readonly",
                               values=client_choices)
     client_box.grid(row=1, column=1, padx=5, pady=3, sticky="w")
 
     # Where: city boxes suggest every city already used, but a new one can
     # be typed. The swap button sits between them, as on flight websites.
-    cities = city_choices(SAMPLE_CLIENTS, SAMPLE_FLIGHTS)
+    cities = city_choices(records_of_type(records, "client"),
+                          records_of_type(records, "flight"))
 
     def swap_cities():
         """Swap From and To, which is handy for a return flight."""
@@ -665,7 +677,7 @@ def create_flights_tab(flights_tab):
             message_label.config(text="Client set to " + name + ".")
             return
         client_id = int(client_box.get().split(" – ")[0])
-        for client in SAMPLE_CLIENTS:
+        for client in records_of_type(records, "client"):
             if client["ID"] == client_id and client["City"]:
                 from_box.set(client["City"])
                 message_label.config(text="From set to " + client["City"] +
@@ -731,7 +743,7 @@ def create_flights_tab(flights_tab):
     # known. A drop-down list, so the agent can only pick a real airline.
     airline_label = ttk.Label(flight_form, text="Airline*")
     airline_label.grid(row=4, column=0, padx=5, pady=3, sticky="w")
-    airline_choices = make_choices(SAMPLE_AIRLINES)
+    airline_choices = make_choices(records_of_type(records, "airline"))
     airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
                                values=airline_choices)
     airline_box.grid(row=4, column=1, padx=5, pady=3, sticky="w")
@@ -764,7 +776,7 @@ def create_flights_tab(flights_tab):
         if not selected:
             return
         flight_id = int(selected[0])
-        for flight in SAMPLE_FLIGHTS:
+        for flight in records_of_type(records, "flight"):
             if flight["ID"] == flight_id:
                 id_entry.config(state="normal")
                 id_entry.delete(0, "end")
@@ -824,6 +836,10 @@ def create_main_window():
     style = ttk.Style()
     style.configure("TLabelframe.Label", font=title_font)
 
+    # All records in one list of dictionaries, as the brief asks.
+    # For now the sample data; later: records = load_records(DATA_FILE)
+    records = SAMPLE_CLIENTS + SAMPLE_AIRLINES + SAMPLE_FLIGHTS
+
     # Make the tabs bigger when the window is resized
     tab_bar = ttk.Notebook(main_window)
     tab_bar.pack(fill="both", expand=True)
@@ -831,15 +847,15 @@ def create_main_window():
     # One tab for each type of record in the same order as in my sketch
     clients_tab = ttk.Frame(tab_bar)
     tab_bar.add(clients_tab, text="Clients")
-    create_clients_tab(clients_tab)
+    create_clients_tab(clients_tab, records)
 
     airlines_tab = ttk.Frame(tab_bar)
     tab_bar.add(airlines_tab, text="Airlines")
-    create_airlines_tab(airlines_tab)
+    create_airlines_tab(airlines_tab, records)
 
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
-    create_flights_tab(flights_tab)
+    create_flights_tab(flights_tab, records)
 
     return main_window
 
