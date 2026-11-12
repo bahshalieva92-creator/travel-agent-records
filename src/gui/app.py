@@ -319,6 +319,35 @@ def create_airlines_tab(airlines_tab):
     # The ID is shown automatically, so the agent cannot type it
     airline_entries["ID"].config(state="readonly")
 
+    def clear_form():
+        """Clear every box in the airline form."""
+        for entry in airline_entries.values():
+            entry.config(state="normal")
+            entry.delete(0, "end")
+        airline_entries["ID"].config(state="readonly")
+        message_label.config(text="Form cleared. Fill in the details "
+                                  "to add a new airline.")
+        airline_list.selection_remove(airline_list.selection())
+
+    def fill_form(event):
+        """Show the details of the chosen airline in the form."""
+        selected = airline_list.selection()
+        if not selected:
+            return
+        airline_id = int(selected[0])
+        for airline in SAMPLE_AIRLINES:
+            if airline["ID"] == airline_id:
+                for field, entry in airline_entries.items():
+                    entry.config(state="normal")
+                    entry.delete(0, "end")
+                    entry.insert(0, airline[field])
+                airline_entries["ID"].config(state="readonly")
+                company_name = airline["Company Name"]
+                message_label.config(text="Showing " + company_name +
+                                     ". Update details and click Update.")
+
+    airline_list.bind("<<TreeviewSelect>>", fill_form)
+
     # Buttons in the same places as on the Clients tab
     button_bar = ttk.Frame(airlines_tab)
     button_bar.pack(fill="x", padx=10)
@@ -327,7 +356,7 @@ def create_airlines_tab(airlines_tab):
     create_button.pack(side="left", padx=5)
     update_button = ttk.Button(button_bar, text="Update")
     update_button.pack(side="left", padx=5)
-    clear_button = ttk.Button(button_bar, text="Clear")
+    clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete")
     delete_button.pack(side="right", padx=5)
