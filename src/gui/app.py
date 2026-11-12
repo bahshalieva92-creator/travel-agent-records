@@ -198,6 +198,18 @@ def make_choices(records):
     return choices
 
 
+def city_choices(clients, flights):
+    """Make the city suggestions: every city already used, sorted A-Z."""
+    cities = set()
+    for client in clients:
+        cities.add(client["City"])
+    for flight in flights:
+        cities.add(flight["Start City"])
+        cities.add(flight["End City"])
+    cities.discard("")
+    return sorted(cities)
+
+
 def show_flights(flight_list, flights, clients, airlines):
     """Show each flight as a row, soonest first, with names not IDs."""
     client_names = {}
@@ -579,7 +591,8 @@ def create_flights_tab(flights_tab):
 
     update_count()
 
-    # Flight Details form from my sketch
+    # Flight Details form from my sketch, in the order of a booking call:
+    # who, where, when, and then which airline
     flight_form = ttk.LabelFrame(flights_tab, text="Flight Details")
     flight_form.pack(fill="x", padx=10, pady=10)
 
@@ -589,27 +602,47 @@ def create_flights_tab(flights_tab):
     id_entry = ttk.Entry(flight_form, width=34, state="readonly")
     id_entry.grid(row=0, column=1, padx=5, pady=3, sticky="w")
 
-    # Drop-down lists, so the agent can only pick a real client and airline
+    # Who: a drop-down list, so the agent can only pick a real client
     client_label = ttk.Label(flight_form, text="Client*")
     client_label.grid(row=1, column=0, padx=5, pady=3, sticky="w")
     client_box = ttk.Combobox(flight_form, width=32, state="readonly",
                               values=make_choices(SAMPLE_CLIENTS))
     client_box.grid(row=1, column=1, padx=5, pady=3, sticky="w")
 
-    airline_label = ttk.Label(flight_form, text="Airline*")
-    airline_label.grid(row=2, column=0, padx=5, pady=3, sticky="w")
-    airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
-                               values=make_choices(SAMPLE_AIRLINES))
-    airline_box.grid(row=2, column=1, padx=5, pady=3, sticky="w")
+    # Where: city boxes suggest every city already used, but a new one can
+    # be typed. The swap button sits between them, as on flight websites.
+    cities = city_choices(SAMPLE_CLIENTS, SAMPLE_FLIGHTS)
 
-    # Arrow boxes for the date in the same order as the list (year, month,
-    # day), so the agent cannot type an impossible date like month 13
+    def swap_cities():
+        """Swap From and To, which is handy for a return flight."""
+        start_city = from_box.get()
+        end_city = to_box.get()
+        from_box.set(end_city)
+        to_box.set(start_city)
+
+    from_label = ttk.Label(flight_form, text="From*")
+    from_label.grid(row=2, column=0, padx=5, pady=3, sticky="w")
+    from_area = ttk.Frame(flight_form)
+    from_area.grid(row=2, column=1, padx=5, pady=3, sticky="w")
+    from_box = ttk.Combobox(from_area, width=26, values=cities)
+    from_box.pack(side="left")
+    swap_button = ttk.Button(from_area, text="⇄", width=3,
+                             command=swap_cities)
+    swap_button.pack(side="left", padx=(5, 0))
+
+    to_label = ttk.Label(flight_form, text="To*")
+    to_label.grid(row=2, column=2, padx=5, pady=3, sticky="w")
+    to_box = ttk.Combobox(flight_form, width=26, values=cities)
+    to_box.grid(row=2, column=3, padx=5, pady=3, sticky="w")
+
+    # When: arrow boxes for the date in the same order as the list (year,
+    # month, day), so the agent cannot type an impossible date like month 13
     today = date.today()
 
     date_label = ttk.Label(flight_form, text="Date*")
-    date_label.grid(row=0, column=2, padx=5, pady=3, sticky="w")
+    date_label.grid(row=3, column=0, padx=5, pady=3, sticky="w")
     date_boxes = ttk.Frame(flight_form)
-    date_boxes.grid(row=0, column=3, padx=5, pady=3, sticky="w")
+    date_boxes.grid(row=3, column=1, padx=5, pady=3, sticky="w")
 
     year_box = ttk.Spinbox(date_boxes, from_=today.year, to=today.year + 4,
                            width=5, state="readonly")
@@ -627,9 +660,9 @@ def create_flights_tab(flights_tab):
 
     # Arrow boxes for the time on the 24-hour clock, minutes in steps of 5
     time_label = ttk.Label(flight_form, text="Time*")
-    time_label.grid(row=1, column=2, padx=5, pady=3, sticky="w")
+    time_label.grid(row=3, column=2, padx=5, pady=3, sticky="w")
     time_boxes = ttk.Frame(flight_form)
-    time_boxes.grid(row=1, column=3, padx=5, pady=3, sticky="w")
+    time_boxes.grid(row=3, column=3, padx=5, pady=3, sticky="w")
 
     hour_box = ttk.Spinbox(time_boxes, from_=0, to=23, width=3,
                            format="%02.0f", wrap=True, state="readonly")
@@ -649,6 +682,14 @@ def create_flights_tab(flights_tab):
     day_box.set(today.strftime("%d"))
     hour_box.set("12")
     minute_box.set("00")
+
+    # Which airline: last, because it is chosen once the route and time are
+    # known. A drop-down list, so the agent can only pick a real airline.
+    airline_label = ttk.Label(flight_form, text="Airline*")
+    airline_label.grid(row=4, column=0, padx=5, pady=3, sticky="w")
+    airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
+                               values=make_choices(SAMPLE_AIRLINES))
+    airline_box.grid(row=4, column=1, padx=5, pady=3, sticky="w")
 
 
 def create_main_window():
