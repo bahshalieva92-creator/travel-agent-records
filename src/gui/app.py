@@ -230,6 +230,14 @@ def date_in_words(year, month, day):
     return str(day) + " " + month_name + " " + str(year)
 
 
+def confirm_delete(parent, name):
+    """Ask before deleting, with No as default, as it cannot be undone."""
+    return messagebox.askyesno("Delete record",
+                               "Delete " + name + "? This can't be "
+                               "undone.", icon="warning",
+                               default="no", parent=parent)
+
+
 def records_of_type(records, record_type):
     """Give only the records of one type, for example all the clients."""
     chosen = []
@@ -485,6 +493,21 @@ def create_clients_tab(clients_tab, records):
                          "work once the record functions are connected.",
                          "success")
 
+    def delete_client():
+        """Ask first, then delete the chosen client."""
+        selected = client_list.selection()
+        if not selected:
+            return
+        values = client_list.item(selected[0], "values")
+        name = values[1]
+        if confirm_delete(clients_tab, name):
+            # To connect: delete_record(records, "client", ID) from records.py
+            show_message(message_label, "Delete confirmed. Deleting will "
+                         "work once the record functions are connected.",
+                         "success")
+        else:
+            show_message(message_label, name + " was not deleted.")
+
     # Buttons from my sketch: Delete set apart on the right
     button_bar = ttk.Frame(clients_tab)
     button_bar.pack(fill="x", padx=10)
@@ -497,7 +520,8 @@ def create_clients_tab(clients_tab, records):
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
-    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button = ttk.Button(button_bar, text="Delete",
+                               command=delete_client)
     delete_button.pack(side="right", padx=5)
 
     # Update and Delete stay greyed out until a record is selected
@@ -652,6 +676,21 @@ def create_airlines_tab(airlines_tab, records):
                          "work once the record functions are connected.",
                          "success")
 
+    def delete_airline():
+        """Ask first, then delete the chosen airline."""
+        selected = airline_list.selection()
+        if not selected:
+            return
+        values = airline_list.item(selected[0], "values")
+        name = values[1]
+        if confirm_delete(airlines_tab, name):
+            # To connect: delete_record(records, "airline", ID) from records.py
+            show_message(message_label, "Delete confirmed. Deleting will "
+                         "work once the record functions are connected.",
+                         "success")
+        else:
+            show_message(message_label, name + " was not deleted.")
+
     # Buttons in the same places as on the Clients tab
     button_bar = ttk.Frame(airlines_tab)
     button_bar.pack(fill="x", padx=10)
@@ -664,7 +703,8 @@ def create_airlines_tab(airlines_tab, records):
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
-    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button = ttk.Button(button_bar, text="Delete",
+                               command=delete_airline)
     delete_button.pack(side="right", padx=5)
 
     # Update and Delete stay greyed out until a record is selected
@@ -1021,6 +1061,22 @@ def create_flights_tab(flights_tab, records):
                          "work once the record functions are connected.",
                          "success")
 
+    def delete_flight():
+        """Ask first, then delete the chosen flight."""
+        selected = flight_list.selection()
+        if not selected:
+            return
+        values = flight_list.item(selected[0], "values")
+        name = ("flight " + str(values[0]) + " (" + values[2] + ", " +
+                values[4] + " → " + values[5] + ")")
+        if confirm_delete(flights_tab, name):
+            # To connect: delete_record(records, "flight", ID) from records.py
+            show_message(message_label, "Delete confirmed. Deleting will "
+                         "work once the record functions are connected.",
+                         "success")
+        else:
+            show_message(message_label, name + " was not deleted.")
+
     # Buttons in the same places as on the other tabs
     button_bar = ttk.Frame(flights_tab)
     button_bar.pack(fill="x", padx=10)
@@ -1033,7 +1089,8 @@ def create_flights_tab(flights_tab, records):
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
-    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button = ttk.Button(button_bar, text="Delete",
+                               command=delete_flight)
     delete_button.pack(side="right", padx=5)
 
     # Update and Delete stay greyed out until a record is selected
