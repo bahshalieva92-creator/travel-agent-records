@@ -253,6 +253,33 @@ def reselect_row(record_list, record_id):
         record_list.selection_remove(record_list.selection())
 
 
+def text_found(values, text):
+    """Check if the text is in any of the values, ignoring capitals."""
+    for value in values:
+        if text.lower() in str(value).lower():
+            return True
+    return False
+
+
+def keep_matching_rows(record_list, text):
+    """Remove the rows of a list that do not have the text in any column."""
+    for row in record_list.get_children():
+        if not text_found(record_list.item(row, "values"), text):
+            record_list.delete(row)
+
+
+def show_search_result(message_label, record_list, kind, text):
+    """Tell the agent what the search found, or that nothing matches."""
+    if not record_list.get_children():
+        show_message(message_label, "No " + kind + " match '" + text + "'.",
+                     "warning")
+    elif text:
+        show_message(message_label, "Showing " + kind + " that match '" +
+                     text + "'.")
+    else:
+        show_message(message_label, "Showing all " + kind + ".")
+
+
 def records_of_type(records, record_type):
     """Give only the records of one type, for example all the clients."""
     chosen = []
@@ -577,6 +604,21 @@ def create_clients_tab(clients_tab, records):
         text="Select a client from the list, or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
 
+    # Search: the Search button, Enter and every key typed filter the list
+    def run_search(event=None):
+        """Show only the clients with the search text in any column."""
+        text = search_field.get().strip()
+        for row in client_list.get_children():
+            client_list.delete(row)
+        show_clients(client_list, records_of_type(records, "client"))
+        keep_matching_rows(client_list, text)
+        update_count()
+        reselect_row(client_list, client_entries["ID"].get())
+        show_search_result(message_label, client_list, "clients", text)
+
+    search_button.config(command=run_search)
+    search_field.bind("<KeyRelease>", run_search)
+
     # Remember the starting form, so changes can be spotted
     remember_form()
 
@@ -795,6 +837,21 @@ def create_airlines_tab(airlines_tab, records):
              "or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
 
+    # Search: the Search button, Enter and every key typed filter the list
+    def run_search(event=None):
+        """Show only the airlines with the search text in any column."""
+        text = search_field.get().strip()
+        for row in airline_list.get_children():
+            airline_list.delete(row)
+        show_airlines(airline_list, records_of_type(records, "airline"))
+        keep_matching_rows(airline_list, text)
+        update_count()
+        reselect_row(airline_list, airline_entries["ID"].get())
+        show_search_result(message_label, airline_list, "airlines", text)
+
+    search_button.config(command=run_search)
+    search_field.bind("<KeyRelease>", run_search)
+
     # Remember the starting form, so changes can be spotted
     remember_form()
 
@@ -1010,11 +1067,14 @@ def create_flights_tab(flights_tab, records):
         airlines = records_of_type(records, "airline")
         flights = records_of_type(records, "flight")
 
-        # Flight list and count, so changed names and new flights show
+        # Flight list and count, so changed names and new flights show,
+        # keeping only the flights that match the search text
         for row in flight_list.get_children():
             flight_list.delete(row)
         show_flights(flight_list, flights, clients, airlines)
+        keep_matching_rows(flight_list, search_field.get().strip())
         update_count()
+        reselect_row(flight_list, id_entry.get())
 
         # Drop-down lists, so new or renamed clients and airlines show
         client_choices.clear()
@@ -1221,6 +1281,16 @@ def create_flights_tab(flights_tab, records):
         flights_tab,
         text="Select a flight from the list, or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
+
+    # Search: the Search button, Enter and every key typed filter the list
+    def run_search(event=None):
+        """Show only the flights with the search text in any column."""
+        refresh_lists()
+        show_search_result(message_label, flight_list, "flights",
+                           search_field.get().strip())
+
+    search_button.config(command=run_search)
+    search_field.bind("<KeyRelease>", run_search)
 
     # Remember the starting form, so changes can be spotted
     remember_form()
