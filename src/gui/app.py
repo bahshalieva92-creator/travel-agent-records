@@ -238,6 +238,21 @@ def confirm_delete(parent, name):
                                default="no", parent=parent)
 
 
+def confirm_discard(parent, name):
+    """Ask before throwing away unsaved changes, with No as default."""
+    return messagebox.askyesno("Unsaved changes",
+                               "Discard your changes to " + name + "?",
+                               icon="warning", default="no", parent=parent)
+
+
+def reselect_row(record_list, record_id):
+    """Select the row of the record in the form again, or no row at all."""
+    if record_id and record_list.exists(record_id):
+        record_list.selection_set(record_id)
+    else:
+        record_list.selection_remove(record_list.selection())
+
+
 def records_of_type(records, record_type):
     """Give only the records of one type, for example all the clients."""
     chosen = []
@@ -430,8 +445,28 @@ def create_clients_tab(clients_tab, records):
     required_note.grid(row=5, column=0, columnspan=4, padx=5, pady=3,
                        sticky="w")
 
+    # The form as it was last filled or cleared, to spot unsaved changes
+    saved_form = {}
+
+    def remember_form():
+        """Remember the form as it is now, to compare with it later."""
+        saved_form.clear()
+        saved_form.update(read_entries(client_entries))
+
+    def ok_to_leave_form():
+        """Give True if nothing is unsaved, or the agent discards it."""
+        if read_entries(client_entries) == saved_form:
+            return True
+        if client_entries["ID"].get():
+            name = saved_form["Name"]
+        else:
+            name = "the new client"
+        return confirm_discard(clients_tab, name)
+
     def clear_form():
         """Clear every box in the form."""
+        if not ok_to_leave_form():
+            return
         for entry in client_entries.values():
             entry.config(state="normal")
             entry.delete(0, "end")
@@ -441,11 +476,18 @@ def create_clients_tab(clients_tab, records):
         show_message(message_label, "Form cleared. Fill in the details "
                                     "to add a new client.")
         client_list.selection_remove(client_list.selection())
+        remember_form()
         
     def fill_form(event):
         """Show the details of the chosen client in the form."""
         selected = client_list.selection()
         if not selected:
+            return
+        # The client already in the form: nothing to change
+        if selected[0] == client_entries["ID"].get():
+            return
+        if not ok_to_leave_form():
+            reselect_row(client_list, client_entries["ID"].get())
             return
         client_id = int(selected[0])
         for client in records_of_type(records, "client"):
@@ -459,6 +501,7 @@ def create_clients_tab(clients_tab, records):
                 delete_button.config(state="normal")
                 show_message(message_label, "Showing " + client["Name"] +
                              ". Update details and click Update.")
+                remember_form()
 
     client_list.bind("<<TreeviewSelect>>", fill_form)
 
@@ -533,6 +576,12 @@ def create_clients_tab(clients_tab, records):
         clients_tab,
         text="Select a client from the list, or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
+
+    # Remember the starting form, so changes can be spotted
+    remember_form()
+
+    # Give back the check, so the window can use it when closing
+    return ok_to_leave_form
     
 
 def create_airlines_tab(airlines_tab, records):
@@ -617,8 +666,28 @@ def create_airlines_tab(airlines_tab, records):
     required_note.grid(row=2, column=0, columnspan=4, padx=5, pady=3,
                        sticky="w")
 
+    # The form as it was last filled or cleared, to spot unsaved changes
+    saved_form = {}
+
+    def remember_form():
+        """Remember the form as it is now, to compare with it later."""
+        saved_form.clear()
+        saved_form.update(read_entries(airline_entries))
+
+    def ok_to_leave_form():
+        """Give True if nothing is unsaved, or the agent discards it."""
+        if read_entries(airline_entries) == saved_form:
+            return True
+        if airline_entries["ID"].get():
+            name = saved_form["Company Name"]
+        else:
+            name = "the new airline"
+        return confirm_discard(airlines_tab, name)
+
     def clear_form():
         """Clear every box in the airline form."""
+        if not ok_to_leave_form():
+            return
         for entry in airline_entries.values():
             entry.config(state="normal")
             entry.delete(0, "end")
@@ -628,11 +697,18 @@ def create_airlines_tab(airlines_tab, records):
         show_message(message_label, "Form cleared. Fill in the details "
                                     "to add a new airline.")
         airline_list.selection_remove(airline_list.selection())
+        remember_form()
 
     def fill_form(event):
         """Show the details of the chosen airline in the form."""
         selected = airline_list.selection()
         if not selected:
+            return
+        # The airline already in the form: nothing to change
+        if selected[0] == airline_entries["ID"].get():
+            return
+        if not ok_to_leave_form():
+            reselect_row(airline_list, airline_entries["ID"].get())
             return
         airline_id = int(selected[0])
         for airline in records_of_type(records, "airline"):
@@ -647,6 +723,7 @@ def create_airlines_tab(airlines_tab, records):
                 company_name = airline["Company Name"]
                 show_message(message_label, "Showing " + company_name +
                              ". Update details and click Update.")
+                remember_form()
 
     airline_list.bind("<<TreeviewSelect>>", fill_form)
 
@@ -717,6 +794,12 @@ def create_airlines_tab(airlines_tab, records):
         text="Select an airline from the list, "
              "or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
+
+    # Remember the starting form, so changes can be spotted
+    remember_form()
+
+    # Give back the check, so the window can use it when closing
+    return ok_to_leave_form
 
 
 def create_flights_tab(flights_tab, records):
@@ -952,8 +1035,36 @@ def create_flights_tab(flights_tab, records):
 
     flights_tab.bind("<Map>", tab_opened)
 
+    def read_form():
+        """Read the flight form, with the date and time as one value."""
+        values = read_entries(flight_boxes)
+        values["Date"] = (year_box.get() + "-" + month_box.get() + "-" +
+                          day_box.get() + " " + hour_box.get() + ":" +
+                          minute_box.get())
+        return values
+
+    # The form as it was last filled or cleared, to spot unsaved changes
+    saved_form = {}
+
+    def remember_form():
+        """Remember the form as it is now, to compare with it later."""
+        saved_form.clear()
+        saved_form.update(read_form())
+
+    def ok_to_leave_form():
+        """Give True if nothing is unsaved, or the agent discards it."""
+        if read_form() == saved_form:
+            return True
+        if id_entry.get():
+            name = "flight " + id_entry.get()
+        else:
+            name = "the new flight"
+        return confirm_discard(flights_tab, name)
+
     def clear_form():
         """Empty the flight form, ready to add a new flight."""
+        if not ok_to_leave_form():
+            return
         id_entry.config(state="normal")
         id_entry.delete(0, "end")
         id_entry.config(state="readonly")
@@ -967,11 +1078,18 @@ def create_flights_tab(flights_tab, records):
         show_message(message_label, "Form cleared. Fill in the details "
                                     "to add a new flight.")
         flight_list.selection_remove(flight_list.selection())
+        remember_form()
 
     def fill_form(event):
         """Show the details of the chosen flight in the form."""
         selected = flight_list.selection()
         if not selected:
+            return
+        # The flight already in the form: nothing to change
+        if selected[0] == id_entry.get():
+            return
+        if not ok_to_leave_form():
+            reselect_row(flight_list, id_entry.get())
             return
         flight_id = int(selected[0])
         for flight in records_of_type(records, "flight"):
@@ -995,6 +1113,7 @@ def create_flights_tab(flights_tab, records):
                     choice_name(client_text) + ", " +
                     flight["Start City"] + " → " + flight["End City"] +
                     ". Update details and click Update.")
+                remember_form()
 
     flight_list.bind("<<TreeviewSelect>>", fill_form)
 
@@ -1103,6 +1222,12 @@ def create_flights_tab(flights_tab, records):
         text="Select a flight from the list, or fill in the form to add one.")
     message_label.pack(anchor="w", padx=10, pady=10)
 
+    # Remember the starting form, so changes can be spotted
+    remember_form()
+
+    # Give back the check, so the window can use it when closing
+    return ok_to_leave_form
+
 
 def create_main_window():
     """Open the main window with one tab for every type of record."""
@@ -1128,15 +1253,27 @@ def create_main_window():
     # One tab for each type of record in the same order as in my sketch
     clients_tab = ttk.Frame(tab_bar)
     tab_bar.add(clients_tab, text="Clients")
-    create_clients_tab(clients_tab, records)
+    clients_form_check = create_clients_tab(clients_tab, records)
 
     airlines_tab = ttk.Frame(tab_bar)
     tab_bar.add(airlines_tab, text="Airlines")
-    create_airlines_tab(airlines_tab, records)
+    airlines_form_check = create_airlines_tab(airlines_tab, records)
 
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
-    create_flights_tab(flights_tab, records)
+    flights_form_check = create_flights_tab(flights_tab, records)
+
+    def close_app():
+        """Check every form for unsaved changes, then close the window."""
+        for ok_to_leave_form in (clients_form_check, airlines_form_check,
+                                 flights_form_check):
+            if not ok_to_leave_form():
+                return
+        # To connect: save_records(records, DATA_FILE) from storage.py
+        main_window.destroy()
+
+    # Run close_app when the agent closes the window
+    main_window.protocol("WM_DELETE_WINDOW", close_app)
 
     return main_window
 
