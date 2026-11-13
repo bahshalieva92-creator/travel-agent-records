@@ -108,6 +108,9 @@ but please tell the team (and the GUI designer) in the pull request.
 - A flight's `Client_ID` and `Airline_ID` must exist.
 - A client or airline that still has flights cannot be deleted. The message tells
   the agent to delete or change those flights first.
+- A flight `Date` in the past is **not** an error: `records.py` accepts it, so a
+  real past trip can still be recorded. The GUI warns and asks instead (see
+  section 7).
 
 ---
 
@@ -149,3 +152,9 @@ but please tell the team (and the GUI designer) in the pull request.
 - The message line always tells the agent what to do next or what just happened.
 - Flights will use drop-down lists to choose the client and airline, so the agent
   does not have to remember ID numbers.
+- **Past dates: warn and ask.** If a flight's date and time are before now,
+  Create and Update ask "This flight is on 5 March 2026 at 14:30, which is in
+  the past. Save it anyway?" with **No** pre-selected. No keeps the form open
+  and shows "⚠ Not saved. Change the date or time and try again."; Yes saves
+  the flight. A past date is usually a typing mistake but can be a real trip,
+  so the agent decides rather than the program blocking it.
