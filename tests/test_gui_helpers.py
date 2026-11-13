@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from gui.app import (choice_name, city_choices, date_in_words, find_choice,
                      first_missing_field, make_choices, phone_is_valid,
-                     read_entries, real_date, records_of_type)
+                     plain_text, read_entries, real_date, records_of_type)
 
 # A few records of each type, used by the list and drop-down tests
 TEST_RECORDS = [
@@ -138,6 +138,20 @@ class TestListsAndChoices(unittest.TestCase):
                               records_of_type(TEST_RECORDS, "flight"))
         self.assertEqual(cities,
                          ["Baku", "Frankfurt", "Istanbul", "Mexico City"])
+
+    def test_accented_names_sort_with_their_plain_letter(self):
+        """Émile Dubois is listed under E, between Anna and Stella."""
+        records = [{"ID": 1, "Type": "client", "Name": "Stella Cortner"},
+                   {"ID": 2, "Type": "client", "Name": "Émile Dubois"},
+                   {"ID": 3, "Type": "client", "Name": "Anna Schmidt"}]
+        self.assertEqual(make_choices(records),
+                         ["3 – Anna Schmidt", "2 – Émile Dubois",
+                          "1 – Stella Cortner"])
+
+    def test_plain_text_ignores_accents_and_capitals(self):
+        """plain_text turns "Émile" into "emile" and "ß" into "ss"."""
+        self.assertEqual(plain_text("Émile"), "emile")
+        self.assertEqual(plain_text("Straße"), "strasse")
 
 
 if __name__ == "__main__":

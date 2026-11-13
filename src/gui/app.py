@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import font
 from tkinter import messagebox
 from datetime import date, datetime
+import unicodedata
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -316,10 +317,22 @@ def record_name(record):
     return record["Name"]
 
 
+def plain_text(text):
+    """Give text without accents or capitals, so É sorts with E."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    letters = "".join(c for c in decomposed if not unicodedata.combining(c))
+    return letters.casefold()
+
+
+def name_for_sorting(record):
+    """Give a client's or airline's name in plain letters, for A–Z order."""
+    return plain_text(record_name(record))
+
+
 def make_choices(records):
     """Make the "ID – name" choices for a drop-down list, sorted by name."""
     choices = []
-    for record in sorted(records, key=record_name):
+    for record in sorted(records, key=name_for_sorting):
         choices.append(str(record["ID"]) + " – " + record_name(record))
     return choices
 
@@ -347,7 +360,7 @@ def city_choices(clients, flights):
         cities.add(flight["Start City"])
         cities.add(flight["End City"])
     cities.discard("")
-    return sorted(cities)
+    return sorted(cities, key=plain_text)
 
 
 def show_flights(flight_list, flights, clients, airlines):
