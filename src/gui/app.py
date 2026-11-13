@@ -6,6 +6,7 @@ from tkinter import font
 from tkinter import messagebox
 from datetime import date, datetime
 import unicodedata
+import sys
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -29,6 +30,19 @@ HOW_TO_USE = (
     "Flights: pick the client and airline from the lists; ⇄ swaps From "
     "and To.\n"
     "The message under the buttons says what happened or what to do next."
+)
+
+# Shortcut key: Command on a Mac, Control on Windows and Linux
+SHORTCUT_KEY = "Command" if sys.platform == "darwin" else "Control"
+SHORTCUT_NAME = "Cmd" if sys.platform == "darwin" else "Ctrl"
+
+# List shown by Help > Keyboard shortcuts
+KEYBOARD_SHORTCUTS = (
+    SHORTCUT_NAME + "+F: jump to the search box of the open tab.\n"
+    + SHORTCUT_NAME + "+N: clear the form to add a new record.\n"
+    "Enter: search, when the cursor is in the search box.\n"
+    "Esc: clear the search and show every record.\n"
+    "Tab: move to the next box in the form."
 )
 
 # These are 6 sample client details from my sketch plus 9 new random ones
@@ -290,6 +304,21 @@ def show_search_result(message_label, record_list, kind, text):
                      text + "'.")
     else:
         show_message(message_label, "Showing all " + kind + ".")
+
+
+def add_tab_shortcuts(tab, search_field, clear_form):
+    """Make Cmd/Ctrl+F and Cmd/Ctrl+N work on this tab while it is open."""
+    def jump_to_search(event):
+        if tab.winfo_ismapped():
+            search_field.focus_set()
+            search_field.select_range(0, "end")
+
+    def new_record(event):
+        if tab.winfo_ismapped():
+            clear_form()
+
+    tab.bind_all("<" + SHORTCUT_KEY + "-f>", jump_to_search, add="+")
+    tab.bind_all("<" + SHORTCUT_KEY + "-n>", new_record, add="+")
 
 
 def records_of_type(records, record_type):
@@ -651,6 +680,7 @@ def create_clients_tab(clients_tab, records):
 
     show_all_button.config(command=show_all)
     search_field.bind("<Escape>", show_all)
+    add_tab_shortcuts(clients_tab, search_field, clear_form)
 
     # Remember the starting form, so changes can be spotted
     remember_form()
@@ -893,6 +923,7 @@ def create_airlines_tab(airlines_tab, records):
 
     show_all_button.config(command=show_all)
     search_field.bind("<Escape>", show_all)
+    add_tab_shortcuts(airlines_tab, search_field, clear_form)
 
     # Remember the starting form, so changes can be spotted
     remember_form()
@@ -1342,6 +1373,7 @@ def create_flights_tab(flights_tab, records):
 
     show_all_button.config(command=show_all)
     search_field.bind("<Escape>", show_all)
+    add_tab_shortcuts(flights_tab, search_field, clear_form)
 
     # Remember the starting form, so changes can be spotted
     remember_form()
@@ -1390,10 +1422,16 @@ def create_main_window():
             "How to use", "How to use the Travel Agent Record Manager",
             detail=HOW_TO_USE, parent=main_window)
 
+    def show_shortcuts():
+        """Show the list of keyboard shortcuts."""
+        messagebox.showinfo("Keyboard shortcuts", "Keyboard shortcuts",
+                            detail=KEYBOARD_SHORTCUTS, parent=main_window)
+
     # Help menu, so a new agent can find the main tasks straight away
     menu_bar = tk.Menu(main_window)
     help_menu = tk.Menu(menu_bar, name="help", tearoff=False)
     help_menu.add_command(label="How to use", command=show_how_to_use)
+    help_menu.add_command(label="Keyboard shortcuts", command=show_shortcuts)
     menu_bar.add_cascade(label="Help", menu=help_menu)
     main_window.config(menu=menu_bar)
 
