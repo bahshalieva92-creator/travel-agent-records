@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import font
+from datetime import date
 
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
@@ -111,6 +112,57 @@ SAMPLE_AIRLINES = [
 ]
 
 
+# 15 sample flights that use my sample clients and airlines, to try
+# out the Flights tab before the team's load function is ready.
+SAMPLE_FLIGHTS = [
+    {"ID": 1, "Type": "flight", "Client_ID": 1, "Airline_ID": 13,
+     "Date": "2026-12-05 14:30", "Start City": "Frankfurt",
+     "End City": "London"},
+    {"ID": 2, "Type": "flight", "Client_ID": 1, "Airline_ID": 12,
+     "Date": "2026-12-12 09:15", "Start City": "London",
+     "End City": "Frankfurt"},
+    {"ID": 3, "Type": "flight", "Client_ID": 8, "Airline_ID": 11,
+     "Date": "2026-11-20 07:45", "Start City": "Baku",
+     "End City": "Istanbul"},
+    {"ID": 4, "Type": "flight", "Client_ID": 12, "Airline_ID": 15,
+     "Date": "2026-11-28 23:10", "Start City": "Hanoi",
+     "End City": "Ho Chi Minh City"},
+    {"ID": 5, "Type": "flight", "Client_ID": 10, "Airline_ID": 9,
+     "Date": "2027-01-08 06:00", "Start City": "Mexico City",
+     "End City": "Buenos Aires"},
+    {"ID": 6, "Type": "flight", "Client_ID": 6, "Airline_ID": 6,
+     "Date": "2026-12-18 22:05", "Start City": "Tokyo",
+     "End City": "Dubai"},
+    {"ID": 7, "Type": "flight", "Client_ID": 9, "Airline_ID": 5,
+     "Date": "2026-10-30 08:20", "Start City": "Shanghai",
+     "End City": "Singapore"},
+    {"ID": 8, "Type": "flight", "Client_ID": 13, "Airline_ID": 14,
+     "Date": "2026-12-01 13:40", "Start City": "Singapore",
+     "End City": "Tokyo"},
+    {"ID": 9, "Type": "flight", "Client_ID": 14, "Airline_ID": 1,
+     "Date": "2026-11-15 18:25", "Start City": "Moscow",
+     "End City": "Saint Petersburg"},
+    {"ID": 10, "Type": "flight", "Client_ID": 15, "Airline_ID": 2,
+     "Date": "2026-12-22 11:00", "Start City": "Saint Petersburg",
+     "End City": "Istanbul"},
+    {"ID": 11, "Type": "flight", "Client_ID": 11, "Airline_ID": 8,
+     "Date": "2027-02-14 10:30", "Start City": "Amsterdam",
+     "End City": "Mexico City"},
+    {"ID": 12, "Type": "flight", "Client_ID": 5, "Airline_ID": 3,
+     "Date": "2026-10-25 16:50", "Start City": "Rome",
+     "End City": "Doha"},
+    {"ID": 13, "Type": "flight", "Client_ID": 4, "Airline_ID": 10,
+     "Date": "2027-03-03 07:15", "Start City": "Columbus",
+     "End City": "Mexico City"},
+    {"ID": 14, "Type": "flight", "Client_ID": 7, "Airline_ID": 12,
+     "Date": "2026-11-12 19:30", "Start City": "London",
+     "End City": "Rome"},
+    {"ID": 15, "Type": "flight", "Client_ID": 2, "Airline_ID": 4,
+     "Date": "2027-01-20 12:00", "Start City": "Warsaw",
+     "End City": "Shanghai"},
+]
+
+
 def show_clients(client_list, clients):
     """Show each client as a separate new row in the list."""
     for client in clients:
@@ -124,6 +176,73 @@ def show_airlines(airline_list, airlines):
     for airline in airlines:
         airline_list.insert("", "end", iid=airline["ID"], values=(
             airline["ID"], airline["Company Name"]))
+
+
+def flight_date(flight):
+    """Give the date of a flight, so flights can be sorted by date."""
+    return flight["Date"]
+
+
+def record_name(record):
+    """Give the name of a client or airline, so they can be sorted."""
+    if record["Type"] == "airline":
+        return record["Company Name"]
+    return record["Name"]
+
+
+def make_choices(records):
+    """Make the "ID – name" choices for a drop-down list, sorted by name."""
+    choices = []
+    for record in sorted(records, key=record_name):
+        choices.append(str(record["ID"]) + " – " + record_name(record))
+    return choices
+
+
+def find_choice(choices, record_id):
+    """Find the "ID – name" choice for this ID, or "" if there is none."""
+    start = str(record_id) + " – "
+    for choice in choices:
+        if choice.startswith(start):
+            return choice
+    return ""
+
+
+def choice_name(choice):
+    """Give the name part of an "ID – name" choice."""
+    return choice.split(" – ", 1)[-1]
+
+
+def city_choices(clients, flights):
+    """Make the city suggestions: every city already used, sorted A-Z."""
+    cities = set()
+    for client in clients:
+        cities.add(client["City"])
+    for flight in flights:
+        cities.add(flight["Start City"])
+        cities.add(flight["End City"])
+    cities.discard("")
+    return sorted(cities)
+
+
+def show_flights(flight_list, flights, clients, airlines):
+    """Show each flight as a row, soonest first, with names not IDs."""
+    client_names = {}
+    for client in clients:
+        client_names[client["ID"]] = client["Name"]
+    airline_names = {}
+    for airline in airlines:
+        airline_names[airline["ID"]] = airline["Company Name"]
+
+    for flight in sorted(flights, key=flight_date):
+        client_id = flight["Client_ID"]
+        airline_id = flight["Airline_ID"]
+        client_text = "Client not found (ID " + str(client_id) + ")"
+        airline_text = "Airline not found (ID " + str(airline_id) + ")"
+        flight_list.insert("", "end", iid=flight["ID"], values=(
+            flight["ID"], flight["Date"],
+            client_names.get(client_id, client_text),
+            airline_names.get(airline_id, airline_text),
+            flight["Start City"], flight["End City"]))
 
 
 def create_clients_tab(clients_tab):
@@ -423,6 +542,275 @@ def create_airlines_tab(airlines_tab):
     message_label.pack(anchor="w", padx=10, pady=10)
 
 
+def create_flights_tab(flights_tab):
+    """Create the search bar and the flight list on the Flights tab."""
+
+    # Search bar with Search and Show all buttons, same as on the other tabs
+    search_bar = ttk.Frame(flights_tab)
+    search_bar.pack(fill="x", padx=10, pady=10)
+
+    search_title = ttk.Label(search_bar, text="Search flights:")
+    search_title.pack(side="left")
+
+    search_field = ttk.Entry(search_bar, width=40)
+    search_field.pack(side="left", padx=5)
+
+    search_button = ttk.Button(search_bar, text="Search")
+    search_button.pack(side="left")
+
+    show_all_button = ttk.Button(search_bar, text="Show all")
+    show_all_button.pack(side="left", padx=5)
+
+    # Flight list with names instead of ID numbers, soonest flight first
+    list_frame = ttk.Frame(flights_tab)
+    list_frame.pack(fill="both", expand=True, padx=10)
+
+    columns = ("id", "date", "client", "airline", "from", "to")
+    flight_list = ttk.Treeview(list_frame, columns=columns,
+                               show="headings", height=10)
+
+    flight_list.heading("id", text="ID")
+    flight_list.heading("date", text="Date & Time")
+    flight_list.heading("client", text="Client")
+    flight_list.heading("airline", text="Airline")
+    flight_list.heading("from", text="From")
+    flight_list.heading("to", text="To")
+
+    flight_list.column("id", width=55, stretch=False)
+    flight_list.column("date", width=120)
+    flight_list.column("client", width=190)
+    flight_list.column("airline", width=160)
+    flight_list.column("from", width=120)
+    flight_list.column("to", width=120)
+
+    # Scrollbar, so every flight can be reached
+    list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
+                                   command=flight_list.yview)
+    list_scrollbar.pack(side="right", fill="y")
+    flight_list.configure(yscrollcommand=list_scrollbar.set)
+
+    flight_list.pack(side="left", fill="both", expand=True)
+    show_flights(flight_list, SAMPLE_FLIGHTS, SAMPLE_CLIENTS, SAMPLE_AIRLINES)
+
+    # Count under the list, so the agent knows how many flights are shown
+    count_label = ttk.Label(flights_tab)
+    count_label.pack(anchor="w", padx=10)
+
+    def update_count():
+        """Show how many flights are in the list right now."""
+        shown = len(flight_list.get_children())
+        total = len(SAMPLE_FLIGHTS)
+        count_label.config(text="Showing " + str(shown) + " of " +
+                                str(total) + " flights")
+
+    update_count()
+
+    # Flight Details form from my sketch, in the order of a booking call:
+    # who, where, when, and then which airline
+    flight_form = ttk.LabelFrame(flights_tab, text="Flight Details")
+    flight_form.pack(fill="x", padx=10, pady=10)
+
+    # The ID is shown automatically, so the agent cannot type it
+    id_label = ttk.Label(flight_form, text="ID (automatic)")
+    id_label.grid(row=0, column=0, padx=5, pady=3, sticky="w")
+    id_entry = ttk.Entry(flight_form, width=34, state="readonly")
+    id_entry.grid(row=0, column=1, padx=5, pady=3, sticky="w")
+
+    # Who: a drop-down list, so the agent can only pick a real client
+    client_label = ttk.Label(flight_form, text="Client*")
+    client_label.grid(row=1, column=0, padx=5, pady=3, sticky="w")
+    client_choices = make_choices(SAMPLE_CLIENTS)
+    client_box = ttk.Combobox(flight_form, width=32, state="readonly",
+                              values=client_choices)
+    client_box.grid(row=1, column=1, padx=5, pady=3, sticky="w")
+
+    # Where: city boxes suggest every city already used, but a new one can
+    # be typed. The swap button sits between them, as on flight websites.
+    cities = city_choices(SAMPLE_CLIENTS, SAMPLE_FLIGHTS)
+
+    def swap_cities():
+        """Swap From and To, which is handy for a return flight."""
+        start_city = from_box.get()
+        end_city = to_box.get()
+        from_box.set(end_city)
+        to_box.set(start_city)
+        # Show the new route, or a short message if only one city is filled
+        if start_city and end_city:
+            message_label.config(text="Route swapped: " + end_city +
+                                      " → " + start_city + ".")
+        else:
+            message_label.config(text="From and To swapped.")
+
+    from_label = ttk.Label(flight_form, text="From*")
+    from_label.grid(row=2, column=0, padx=5, pady=3, sticky="w")
+    from_area = ttk.Frame(flight_form)
+    from_area.grid(row=2, column=1, padx=5, pady=3, sticky="w")
+    from_box = ttk.Combobox(from_area, width=26, values=cities)
+    from_box.pack(side="left")
+    swap_button = ttk.Button(from_area, text="⇄", width=3,
+                             command=swap_cities)
+    swap_button.pack(side="left", padx=(5, 0))
+
+    to_label = ttk.Label(flight_form, text="To*")
+    to_label.grid(row=2, column=2, padx=5, pady=3, sticky="w")
+    to_box = ttk.Combobox(flight_form, width=26, values=cities)
+    to_box.grid(row=2, column=3, padx=5, pady=3, sticky="w")
+
+    # Smart default: choosing a client fills From with the client's city,
+    # but only if From is still empty, so the agent's typing is never lost
+    def client_chosen(event):
+        """Fill From with the chosen client's city, if From is empty."""
+        if from_box.get():
+            name = choice_name(client_box.get())
+            message_label.config(text="Client set to " + name + ".")
+            return
+        client_id = int(client_box.get().split(" – ")[0])
+        for client in SAMPLE_CLIENTS:
+            if client["ID"] == client_id and client["City"]:
+                from_box.set(client["City"])
+                message_label.config(text="From set to " + client["City"] +
+                                          ", the client's city. Change it "
+                                          "if needed.")
+
+    client_box.bind("<<ComboboxSelected>>", client_chosen)
+
+    # When: arrow boxes for the date in the same order as the list (year,
+    # month, day), so the agent cannot type an impossible date like month 13
+    today = date.today()
+
+    date_label = ttk.Label(flight_form, text="Date*")
+    date_label.grid(row=3, column=0, padx=5, pady=3, sticky="w")
+    date_boxes = ttk.Frame(flight_form)
+    date_boxes.grid(row=3, column=1, padx=5, pady=3, sticky="w")
+
+    year_box = ttk.Spinbox(date_boxes, from_=today.year, to=today.year + 4,
+                           width=5, state="readonly")
+    year_box.pack(side="left")
+    year_dash = ttk.Label(date_boxes, text="-")
+    year_dash.pack(side="left")
+    month_box = ttk.Spinbox(date_boxes, from_=1, to=12, width=3,
+                            format="%02.0f", wrap=True, state="readonly")
+    month_box.pack(side="left")
+    month_dash = ttk.Label(date_boxes, text="-")
+    month_dash.pack(side="left")
+    day_box = ttk.Spinbox(date_boxes, from_=1, to=31, width=3,
+                          format="%02.0f", wrap=True, state="readonly")
+    day_box.pack(side="left")
+
+    # Arrow boxes for the time on the 24-hour clock, minutes in steps of 5
+    time_label = ttk.Label(flight_form, text="Time*")
+    time_label.grid(row=3, column=2, padx=5, pady=3, sticky="w")
+    time_boxes = ttk.Frame(flight_form)
+    time_boxes.grid(row=3, column=3, padx=5, pady=3, sticky="w")
+
+    hour_box = ttk.Spinbox(time_boxes, from_=0, to=23, width=3,
+                           format="%02.0f", wrap=True, state="readonly")
+    hour_box.pack(side="left")
+    time_colon = ttk.Label(time_boxes, text=":")
+    time_colon.pack(side="left")
+    minute_box = ttk.Spinbox(time_boxes, from_=0, to=55, increment=5,
+                             width=3, format="%02.0f", wrap=True,
+                             state="readonly")
+    minute_box.pack(side="left")
+    time_hint = ttk.Label(time_boxes, text="(24-hour)")
+    time_hint.pack(side="left", padx=5)
+
+    def show_date_and_time(date_text):
+        """Put a "YYYY-MM-DD HH:MM" date and time into the arrow boxes."""
+        year_box.set(date_text[0:4])
+        month_box.set(date_text[5:7])
+        day_box.set(date_text[8:10])
+        hour_box.set(date_text[11:13])
+        minute_box.set(date_text[14:16])
+
+    # Start with today's date at 12:00, so the agent only changes what differs
+    start_date = today.strftime("%Y-%m-%d") + " 12:00"
+    show_date_and_time(start_date)
+
+    # Which airline: last, because it is chosen once the route and time are
+    # known. A drop-down list, so the agent can only pick a real airline.
+    airline_label = ttk.Label(flight_form, text="Airline*")
+    airline_label.grid(row=4, column=0, padx=5, pady=3, sticky="w")
+    airline_choices = make_choices(SAMPLE_AIRLINES)
+    airline_box = ttk.Combobox(flight_form, width=32, state="readonly",
+                               values=airline_choices)
+    airline_box.grid(row=4, column=1, padx=5, pady=3, sticky="w")
+
+    # Note that explains the stars on the labels
+    required_note = ttk.Label(flight_form,
+                              text="Fields marked * are required.")
+    required_note.grid(row=5, column=0, columnspan=4, padx=5, pady=3,
+                       sticky="w")
+
+    def clear_form():
+        """Empty the flight form, ready to add a new flight."""
+        id_entry.config(state="normal")
+        id_entry.delete(0, "end")
+        id_entry.config(state="readonly")
+        client_box.set("")
+        from_box.set("")
+        to_box.set("")
+        show_date_and_time(start_date)
+        airline_box.set("")
+        update_button.config(state="disabled")
+        delete_button.config(state="disabled")
+        message_label.config(text="Form cleared. Fill in the details "
+                                  "to add a new flight.")
+        flight_list.selection_remove(flight_list.selection())
+
+    def fill_form(event):
+        """Show the details of the chosen flight in the form."""
+        selected = flight_list.selection()
+        if not selected:
+            return
+        flight_id = int(selected[0])
+        for flight in SAMPLE_FLIGHTS:
+            if flight["ID"] == flight_id:
+                id_entry.config(state="normal")
+                id_entry.delete(0, "end")
+                id_entry.insert(0, flight["ID"])
+                id_entry.config(state="readonly")
+                client_text = find_choice(client_choices, flight["Client_ID"])
+                client_box.set(client_text)
+                from_box.set(flight["Start City"])
+                to_box.set(flight["End City"])
+                show_date_and_time(flight["Date"])
+                airline_box.set(find_choice(airline_choices,
+                                            flight["Airline_ID"]))
+                update_button.config(state="normal")
+                delete_button.config(state="normal")
+                message_label.config(
+                    text="Showing flight " + str(flight_id) + ": " +
+                         choice_name(client_text) + ", " +
+                         flight["Start City"] + " → " + flight["End City"] +
+                         ". Update details and click Update.")
+
+    flight_list.bind("<<TreeviewSelect>>", fill_form)
+
+    # Buttons in the same places as on the other tabs
+    button_bar = ttk.Frame(flights_tab)
+    button_bar.pack(fill="x", padx=10)
+
+    create_button = ttk.Button(button_bar, text="Create")
+    create_button.pack(side="left", padx=5)
+    update_button = ttk.Button(button_bar, text="Update")
+    update_button.pack(side="left", padx=5)
+    clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
+    clear_button.pack(side="left", padx=5)
+    delete_button = ttk.Button(button_bar, text="Delete")
+    delete_button.pack(side="right", padx=5)
+
+    # Update and Delete stay greyed out until a record is selected
+    update_button.config(state="disabled")
+    delete_button.config(state="disabled")
+
+    # Message line shows the agent what happened or what to do
+    message_label = ttk.Label(
+        flights_tab,
+        text="Select a flight from the list, or fill in the form to add one.")
+    message_label.pack(anchor="w", padx=10, pady=10)
+
+
 def create_main_window():
     """Open the main window with one tab for every type of record."""
 
@@ -451,6 +839,7 @@ def create_main_window():
 
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
+    create_flights_tab(flights_tab)
 
     return main_window
 
