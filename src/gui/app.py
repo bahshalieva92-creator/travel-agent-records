@@ -20,6 +20,17 @@ CLIENT_REQUIRED = ["Name", "Phone Number", "Address Line 1", "City",
 AIRLINE_REQUIRED = ["Company Name"]
 FLIGHT_REQUIRED = ["Client", "From", "To", "Airline"]
 
+# Short guide shown by Help > How to use, one line per main task
+HOW_TO_USE = (
+    "Add: click Clear, fill in the form (* = required) and click Create.\n"
+    "Change: click a row, edit the form and click Update.\n"
+    "Delete: click a row, click Delete and confirm with Yes.\n"
+    "Search: type in the search box; Show all or Esc lists everything.\n"
+    "Flights: pick the client and airline from the lists; ⇄ swaps From "
+    "and To.\n"
+    "The message under the buttons says what happened or what to do next."
+)
+
 # These are 6 sample client details from my sketch plus 9 new random ones
 # to try out before the team's load function is ready.
 SAMPLE_CLIENTS = [
@@ -1372,6 +1383,19 @@ def create_main_window():
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
     flights_form_check = create_flights_tab(flights_tab, records)
+
+    def show_how_to_use():
+        """Show the short guide to the main tasks."""
+        messagebox.showinfo(
+            "How to use", "How to use the Travel Agent Record Manager",
+            detail=HOW_TO_USE, parent=main_window)
+
+    # Help menu, so a new agent can find the main tasks straight away
+    menu_bar = tk.Menu(main_window)
+    help_menu = tk.Menu(menu_bar, name="help", tearoff=False)
+    help_menu.add_command(label="How to use", command=show_how_to_use)
+    menu_bar.add_cascade(label="Help", menu=help_menu)
+    main_window.config(menu=menu_bar)
 
     def close_app():
         """Check every form for unsaved changes, then close the window."""
