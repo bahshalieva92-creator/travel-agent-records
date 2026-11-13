@@ -14,7 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from gui.app import (choice_name, city_choices, date_in_words, find_choice,
                      first_missing_field, make_choices, phone_is_valid,
-                     plain_text, read_entries, real_date, records_of_type)
+                     plain_text, read_entries, real_date, records_of_type,
+                     text_found)
 
 # A few records of each type, used by the list and drop-down tests
 TEST_RECORDS = [
@@ -152,6 +153,35 @@ class TestListsAndChoices(unittest.TestCase):
         """plain_text turns "Émile" into "emile" and "ß" into "ss"."""
         self.assertEqual(plain_text("Émile"), "emile")
         self.assertEqual(plain_text("Straße"), "strasse")
+
+
+class TestSearch(unittest.TestCase):
+    """Checks for the search bar on every tab."""
+
+    def test_search_ignores_capitals(self):
+        """"lon" and "LON" both find the London row."""
+        row = (3, "Patrick Walkman", "27 Elm Grove", "London", "UK")
+        self.assertTrue(text_found(row, "lon"))
+        self.assertTrue(text_found(row, "LON"))
+
+    def test_search_ignores_accents(self):
+        """"gutierrez" finds "Alejandro Hernández Gutiérrez"."""
+        row = (10, "Alejandro Hernández Gutiérrez", "Mexico City")
+        self.assertTrue(text_found(row, "gutierrez"))
+
+    def test_search_matches_numbers(self):
+        """An ID or part of a phone number can be searched."""
+        row = (3, "Patrick Walkman", "020 7946 0321")
+        self.assertTrue(text_found(row, "7946"))
+        self.assertTrue(text_found(row, "3"))
+
+    def test_empty_search_matches_every_row(self):
+        """An empty search box keeps every row."""
+        self.assertTrue(text_found((1, "Anna Schmidt"), ""))
+
+    def test_no_match_gives_false(self):
+        """"xyz" matches nothing, so the "No clients match" message shows."""
+        self.assertFalse(text_found((1, "Anna Schmidt", "Frankfurt"), "xyz"))
 
 
 if __name__ == "__main__":

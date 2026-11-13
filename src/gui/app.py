@@ -255,9 +255,9 @@ def reselect_row(record_list, record_id):
 
 
 def text_found(values, text):
-    """Check if the text is in any of the values, ignoring capitals."""
+    """Check if the text is in any value, ignoring accents and capitals."""
     for value in values:
-        if text.lower() in str(value).lower():
+        if plain_text(text) in plain_text(str(value)):
             return True
     return False
 
