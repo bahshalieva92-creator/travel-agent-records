@@ -28,8 +28,11 @@ HOW_TO_USE = (
     "Change: click a row, edit the form and click Update.\n"
     "Delete: click a row, click Delete and confirm with Yes.\n"
     "Search: type in the search box; Show all or Esc lists everything.\n"
+    "Sort: click a column heading for A–Z; click it again for Z–A.\n"
     "Flights: pick the client and airline from the lists; ⇄ swaps From "
     "and To.\n"
+    "Book flight (Clients): starts a new flight for the chosen client.\n"
+    "Show flights (Clients, Airlines): lists the chosen record's flights.\n"
     "The message under the buttons says what happened or what to do next."
 )
 
