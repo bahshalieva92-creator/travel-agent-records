@@ -750,7 +750,7 @@ def create_clients_tab(clients_tab, records, show_flights_for,
     message_label = ttk.Label(
         clients_tab,
         text="Select a client from the list, or fill in the form to add one.")
-    message_label.pack(anchor="w", padx=10, pady=10)
+    message_label.pack(padx=10, pady=10)
 
     # Search: the Search button, Enter and every key typed filter the list
     def run_search(event=None):
@@ -1014,7 +1014,7 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
         airlines_tab,
         text="Select an airline from the list, "
              "or fill in the form to add one.")
-    message_label.pack(anchor="w", padx=10, pady=10)
+    message_label.pack(padx=10, pady=10)
 
     # Search: the Search button, Enter and every key typed filter the list
     def run_search(event=None):
@@ -1478,7 +1478,7 @@ def create_flights_tab(flights_tab, records):
     message_label = ttk.Label(
         flights_tab,
         text="Select a flight from the list, or fill in the form to add one.")
-    message_label.pack(anchor="w", padx=10, pady=10)
+    message_label.pack(padx=10, pady=10)
 
     # Search: the Search button, Enter and every key typed filter the list
     def run_search(event=None):
