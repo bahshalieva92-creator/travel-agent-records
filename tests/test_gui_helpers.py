@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from gui.app import (choice_name, city_choices, date_in_words, find_choice,
                      first_missing_field, make_choices, phone_is_valid,
                      plain_text, read_entries, real_date, records_of_type,
-                     text_found)
+                     sort_value, text_found)
 
 # A few records of each type, used by the list and drop-down tests
 TEST_RECORDS = [
@@ -182,6 +182,27 @@ class TestSearch(unittest.TestCase):
     def test_no_match_gives_false(self):
         """"xyz" matches nothing, so the "No clients match" message shows."""
         self.assertFalse(text_found((1, "Anna Schmidt", "Frankfurt"), "xyz"))
+
+
+class TestSorting(unittest.TestCase):
+    """Checks for sorting a list by clicking a column heading."""
+
+    def test_ids_sort_in_number_order(self):
+        """IDs sort 1, 2, 10, not 1, 10, 2 as text would."""
+        self.assertEqual(sorted([10, "2", 1], key=sort_value), [1, "2", 10])
+
+    def test_names_sort_ignoring_accents_and_capitals(self):
+        """"Émile" sorts between "anna" and "Stella"."""
+        self.assertEqual(sorted(["Stella", "Émile", "anna"], key=sort_value),
+                         ["anna", "Émile", "Stella"])
+
+    def test_numbers_in_text_sort_in_number_order(self):
+        """"88 Nanjing Road" comes before "1450 Maple Avenue"."""
+        addresses = ["1450 Maple Avenue", "88 Nanjing Road",
+                     "14 Wellington Road"]
+        self.assertEqual(sorted(addresses, key=sort_value),
+                         ["14 Wellington Road", "88 Nanjing Road",
+                          "1450 Maple Avenue"])
 
 
 if __name__ == "__main__":

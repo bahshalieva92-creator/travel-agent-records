@@ -7,6 +7,7 @@ from tkinter import messagebox
 from datetime import date, datetime
 import unicodedata
 import sys
+import re
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -322,6 +323,52 @@ def stripe_rows(record_list):
             record_list.item(row, tags=())
 
 
+def sort_value(value):
+    """Give the sort key: numbers in number order, letters without accents."""
+    parts = re.split(r"(\d+)", plain_text(str(value)))
+    return [int(part) if part.isdigit() else part for part in parts]
+
+
+def add_column_sorting(record_list):
+    """Sort the list when a heading is clicked; click again for Z–A.
+
+    Gives back sort_rows, so the list can be sorted again after a search.
+    """
+    titles = {}
+    for column in record_list["columns"]:
+        titles[column] = record_list.heading(column, "text")
+    chosen = {"column": None, "descending": False}
+
+    def sort_rows():
+        column = chosen["column"]
+        if column is None:
+            return
+        rows = list(record_list.get_children())
+        rows.sort(key=lambda row: sort_value(record_list.set(row, column)),
+                  reverse=chosen["descending"])
+        for position, row in enumerate(rows):
+            record_list.move(row, "", position)
+        for name, title in titles.items():
+            arrow = ""
+            if name == column:
+                arrow = " ▼" if chosen["descending"] else " ▲"
+            record_list.heading(name, text=title + arrow)
+
+    def heading_clicked(column):
+        if chosen["column"] == column:
+            chosen["descending"] = not chosen["descending"]
+        else:
+            chosen["column"] = column
+            chosen["descending"] = False
+        sort_rows()
+        stripe_rows(record_list)
+
+    for column in titles:
+        record_list.heading(column,
+                            command=lambda c=column: heading_clicked(c))
+    return sort_rows
+
+
 def add_tab_shortcuts(tab, search_field, clear_form):
     """Make Cmd/Ctrl+F and Cmd/Ctrl+N work on this tab while it is open."""
     def jump_to_search(event):
@@ -483,6 +530,9 @@ def create_clients_tab(clients_tab, records):
     client_list.column("city", width=70)
     client_list.column("country", width=70)
 
+    # Click a heading to sort by that column
+    sort_rows = add_column_sorting(client_list)
+
     # Scrollbar, so that every client can be chosen
     list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
                                    command=client_list.yview)
@@ -497,7 +547,8 @@ def create_clients_tab(clients_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many clients are listed, with every other row shaded."""
+        """Show the count of clients, after sorting and striping the rows."""
+        sort_rows()
         stripe_rows(client_list)
         shown = len(client_list.get_children())
         total = len(records_of_type(records, "client"))
@@ -739,6 +790,9 @@ def create_airlines_tab(airlines_tab, records):
     airline_list.column("id", width=55, stretch=False)
     airline_list.column("company", width=300)
 
+    # Click a heading to sort by that column
+    sort_rows = add_column_sorting(airline_list)
+
     # Scrollbar, so every airline can be reached
     list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
                                    command=airline_list.yview)
@@ -753,7 +807,8 @@ def create_airlines_tab(airlines_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many airlines are listed, with every other row shaded."""
+        """Show the count of airlines, after sorting and striping the rows."""
+        sort_rows()
         stripe_rows(airline_list)
         shown = len(airline_list.get_children())
         total = len(records_of_type(records, "airline"))
@@ -991,6 +1046,9 @@ def create_flights_tab(flights_tab, records):
     flight_list.column("from", width=120)
     flight_list.column("to", width=120)
 
+    # Click a heading to sort by that column
+    sort_rows = add_column_sorting(flight_list)
+
     # Scrollbar, so every flight can be reached
     list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
                                    command=flight_list.yview)
@@ -1007,7 +1065,8 @@ def create_flights_tab(flights_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many flights are listed, with every other row shaded."""
+        """Show the count of flights, after sorting and striping the rows."""
+        sort_rows()
         stripe_rows(flight_list)
         shown = len(flight_list.get_children())
         total = len(records_of_type(records, "flight"))
