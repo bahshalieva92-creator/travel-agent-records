@@ -306,6 +306,22 @@ def show_search_result(message_label, record_list, kind, text):
         show_message(message_label, "Showing all " + kind + ".")
 
 
+def stripe_rows(record_list):
+    """Shade every other row, so a long row is easy to follow across."""
+    window_colour = record_list.winfo_toplevel().cget("background")
+    red, green, blue = record_list.winfo_rgb(window_colour)
+    if red + green + blue > 3 * 32768:      # light mode: a little darker
+        shade = "#ededed"
+    else:                                   # dark mode: a little lighter
+        shade = "#3a3a3a"
+    record_list.tag_configure("stripe", background=shade)
+    for number, row in enumerate(record_list.get_children()):
+        if number % 2 == 1:
+            record_list.item(row, tags=("stripe",))
+        else:
+            record_list.item(row, tags=())
+
+
 def add_tab_shortcuts(tab, search_field, clear_form):
     """Make Cmd/Ctrl+F and Cmd/Ctrl+N work on this tab while it is open."""
     def jump_to_search(event):
@@ -481,7 +497,8 @@ def create_clients_tab(clients_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many clients are in the list right now."""
+        """Show how many clients are listed, with every other row shaded."""
+        stripe_rows(client_list)
         shown = len(client_list.get_children())
         total = len(records_of_type(records, "client"))
         count_label.config(text="Showing " + str(shown) + " of " +
@@ -736,7 +753,8 @@ def create_airlines_tab(airlines_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many airlines are in the list right now."""
+        """Show how many airlines are listed, with every other row shaded."""
+        stripe_rows(airline_list)
         shown = len(airline_list.get_children())
         total = len(records_of_type(records, "airline"))
         count_label.config(text="Showing " + str(shown) + " of " +
@@ -989,7 +1007,8 @@ def create_flights_tab(flights_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many flights are in the list right now."""
+        """Show how many flights are listed, with every other row shaded."""
+        stripe_rows(flight_list)
         shown = len(flight_list.get_children())
         total = len(records_of_type(records, "flight"))
         count_label.config(text="Showing " + str(shown) + " of " +
@@ -1394,6 +1413,16 @@ def create_main_window():
     title_font.configure(weight="bold")
     style = ttk.Style()
     style.configure("TLabelframe.Label", font=title_font)
+
+    # Selected row: clear blue with white text, even when the cursor is
+    # in the form, so it stands out from the striped rows
+    selected_background = [("selected", "#2a62c9")]
+    selected_text = [("selected", "white")]
+    style.map("Treeview",
+              background=selected_background +
+              style.map("Treeview", "background"),
+              foreground=selected_text +
+              style.map("Treeview", "foreground"))
 
     # All records in one list of dictionaries, as the brief asks.
     # For now the sample data; later: records = load_records(DATA_FILE)
