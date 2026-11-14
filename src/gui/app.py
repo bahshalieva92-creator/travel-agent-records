@@ -602,15 +602,18 @@ def create_clients_tab(clients_tab, records, show_flights_for,
         saved_form.clear()
         saved_form.update(read_entries(client_entries))
 
+    def unsaved_name():
+        """Give the name of the client with unsaved changes, or "" if none."""
+        if read_entries(client_entries) == saved_form:
+            return ""
+        if client_entries["ID"].get():
+            return saved_form["Name"]
+        return "the new client"
+
     def ok_to_leave_form():
         """Give True if nothing is unsaved, or the agent discards it."""
-        if read_entries(client_entries) == saved_form:
-            return True
-        if client_entries["ID"].get():
-            name = saved_form["Name"]
-        else:
-            name = "the new client"
-        return confirm_discard(clients_tab, name)
+        name = unsaved_name()
+        return not name or confirm_discard(clients_tab, name)
 
     def clear_form():
         """Clear every box in the form."""
@@ -777,8 +780,8 @@ def create_clients_tab(clients_tab, records, show_flights_for,
     # Remember the starting form, so changes can be spotted
     remember_form()
 
-    # Give back the check, so the window can use it when closing
-    return ok_to_leave_form
+    # Give back the unsaved check, so closing can ask about every tab
+    return unsaved_name
     
 
 def create_airlines_tab(airlines_tab, records, show_flights_for):
@@ -876,15 +879,18 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
         saved_form.clear()
         saved_form.update(read_entries(airline_entries))
 
+    def unsaved_name():
+        """Give the name of the airline with unsaved changes, or "" if none."""
+        if read_entries(airline_entries) == saved_form:
+            return ""
+        if airline_entries["ID"].get():
+            return saved_form["Company Name"]
+        return "the new airline"
+
     def ok_to_leave_form():
         """Give True if nothing is unsaved, or the agent discards it."""
-        if read_entries(airline_entries) == saved_form:
-            return True
-        if airline_entries["ID"].get():
-            name = saved_form["Company Name"]
-        else:
-            name = "the new airline"
-        return confirm_discard(airlines_tab, name)
+        name = unsaved_name()
+        return not name or confirm_discard(airlines_tab, name)
 
     def clear_form():
         """Clear every box in the airline form."""
@@ -1038,8 +1044,8 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
     # Remember the starting form, so changes can be spotted
     remember_form()
 
-    # Give back the check, so the window can use it when closing
-    return ok_to_leave_form
+    # Give back the unsaved check, so closing can ask about every tab
+    return unsaved_name
 
 
 def create_flights_tab(flights_tab, records):
@@ -1299,15 +1305,18 @@ def create_flights_tab(flights_tab, records):
         saved_form.clear()
         saved_form.update(read_form())
 
+    def unsaved_name():
+        """Give the name of the flight with unsaved changes, or "" if none."""
+        if read_form() == saved_form:
+            return ""
+        if id_entry.get():
+            return "flight " + id_entry.get()
+        return "the new flight"
+
     def ok_to_leave_form():
         """Give True if nothing is unsaved, or the agent discards it."""
-        if read_form() == saved_form:
-            return True
-        if id_entry.get():
-            name = "flight " + id_entry.get()
-        else:
-            name = "the new flight"
-        return confirm_discard(flights_tab, name)
+        name = unsaved_name()
+        return not name or confirm_discard(flights_tab, name)
 
     def clear_form():
         """Empty the flight form, ready to add a new flight."""
@@ -1511,8 +1520,8 @@ def create_flights_tab(flights_tab, records):
         client_chosen(None)
         to_box.focus_set()
 
-    # Give back the closing check, and the search and booking for other tabs
-    return ok_to_leave_form, search_for, book_for
+    # Give back the unsaved check, and the search and booking for other tabs
+    return unsaved_name, search_for, book_for
 
 
 def create_main_window():
@@ -1555,7 +1564,7 @@ def create_main_window():
     tab_bar.add(flights_tab, text="Flights")
 
     # The Flights tab is filled first, so Clients and Airlines can open it
-    flights_form_check, search_flights, start_booking = (
+    flights_unsaved, search_flights, start_booking = (
         create_flights_tab(flights_tab, records))
 
     def show_flights_for(name):
@@ -1569,11 +1578,10 @@ def create_main_window():
         tab_bar.update_idletasks()   # draw the Flights tab before any question
         start_booking(client_id)
 
-    clients_form_check = create_clients_tab(clients_tab, records,
-                                            show_flights_for,
-                                            book_flight_for)
-    airlines_form_check = create_airlines_tab(airlines_tab, records,
-                                              show_flights_for)
+    clients_unsaved = create_clients_tab(clients_tab, records,
+                                         show_flights_for, book_flight_for)
+    airlines_unsaved = create_airlines_tab(airlines_tab, records,
+                                           show_flights_for)
 
     def show_how_to_use():
         """Show the short guide to the main tasks."""
@@ -1595,11 +1603,11 @@ def create_main_window():
     main_window.config(menu=menu_bar)
 
     def close_app():
-        """Check every form for unsaved changes, then close the window."""
-        for ok_to_leave_form in (clients_form_check, airlines_form_check,
-                                 flights_form_check):
-            if not ok_to_leave_form():
-                return
+        """Ask once about every unsaved form, then close the window."""
+        names = [name for name in (clients_unsaved(), airlines_unsaved(),
+                                   flights_unsaved()) if name]
+        if names and not confirm_discard(main_window, " and ".join(names)):
+            return
         # To connect: save_records(records, DATA_FILE) from storage.py
         main_window.destroy()
 
