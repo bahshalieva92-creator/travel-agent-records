@@ -7,6 +7,7 @@ from tkinter import messagebox
 from datetime import date, datetime
 import unicodedata
 import sys
+import re
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -27,8 +28,11 @@ HOW_TO_USE = (
     "Change: click a row, edit the form and click Update.\n"
     "Delete: click a row, click Delete and confirm with Yes.\n"
     "Search: type in the search box; Show all or Esc lists everything.\n"
+    "Sort: click a column heading for A–Z; click it again for Z–A.\n"
     "Flights: pick the client and airline from the lists; ⇄ swaps From "
     "and To.\n"
+    "Book flight (Clients): starts a new flight for the chosen client.\n"
+    "Show flights (Clients, Airlines): lists the chosen record's flights.\n"
     "The message under the buttons says what happened or what to do next."
 )
 
@@ -306,6 +310,68 @@ def show_search_result(message_label, record_list, kind, text):
         show_message(message_label, "Showing all " + kind + ".")
 
 
+def stripe_rows(record_list):
+    """Shade every other row, so a long row is easy to follow across."""
+    window_colour = record_list.winfo_toplevel().cget("background")
+    red, green, blue = record_list.winfo_rgb(window_colour)
+    if red + green + blue > 3 * 32768:      # light mode: a little darker
+        shade = "#ededed"
+    else:                                   # dark mode: a little lighter
+        shade = "#3a3a3a"
+    record_list.tag_configure("stripe", background=shade)
+    for number, row in enumerate(record_list.get_children()):
+        if number % 2 == 1:
+            record_list.item(row, tags=("stripe",))
+        else:
+            record_list.item(row, tags=())
+
+
+def sort_value(value):
+    """Give the sort key: numbers in number order, letters without accents."""
+    parts = re.split(r"(\d+)", plain_text(str(value)))
+    return [int(part) if part.isdigit() else part for part in parts]
+
+
+def add_column_sorting(record_list):
+    """Sort the list when a heading is clicked; click again for Z–A.
+
+    Gives back sort_rows, so the list can be sorted again after a search.
+    """
+    titles = {}
+    for column in record_list["columns"]:
+        titles[column] = record_list.heading(column, "text")
+    chosen = {"column": None, "descending": False}
+
+    def sort_rows():
+        column = chosen["column"]
+        if column is None:
+            return
+        rows = list(record_list.get_children())
+        rows.sort(key=lambda row: sort_value(record_list.set(row, column)),
+                  reverse=chosen["descending"])
+        for position, row in enumerate(rows):
+            record_list.move(row, "", position)
+        for name, title in titles.items():
+            arrow = ""
+            if name == column:
+                arrow = " ▼" if chosen["descending"] else " ▲"
+            record_list.heading(name, text=title + arrow)
+
+    def heading_clicked(column):
+        if chosen["column"] == column:
+            chosen["descending"] = not chosen["descending"]
+        else:
+            chosen["column"] = column
+            chosen["descending"] = False
+        sort_rows()
+        stripe_rows(record_list)
+
+    for column in titles:
+        record_list.heading(column,
+                            command=lambda c=column: heading_clicked(c))
+    return sort_rows
+
+
 def add_tab_shortcuts(tab, search_field, clear_form):
     """Make Cmd/Ctrl+F and Cmd/Ctrl+N work on this tab while it is open."""
     def jump_to_search(event):
@@ -424,7 +490,8 @@ def show_flights(flight_list, flights, clients, airlines):
             flight["Start City"], flight["End City"]))
 
 
-def create_clients_tab(clients_tab, records):
+def create_clients_tab(clients_tab, records, show_flights_for,
+                       book_flight_for):
     """Create the Clients tab: search bar, list, form, buttons, message."""
 
     # Search bar with Search and Show all buttons
@@ -467,6 +534,9 @@ def create_clients_tab(clients_tab, records):
     client_list.column("city", width=70)
     client_list.column("country", width=70)
 
+    # Click a heading to sort by that column
+    sort_rows = add_column_sorting(client_list)
+
     # Scrollbar, so that every client can be chosen
     list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
                                    command=client_list.yview)
@@ -481,7 +551,9 @@ def create_clients_tab(clients_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many clients are in the list right now."""
+        """Show the count of clients, after sorting and striping the rows."""
+        sort_rows()
+        stripe_rows(client_list)
         shown = len(client_list.get_children())
         total = len(records_of_type(records, "client"))
         count_label.config(text="Showing " + str(shown) + " of " +
@@ -533,15 +605,18 @@ def create_clients_tab(clients_tab, records):
         saved_form.clear()
         saved_form.update(read_entries(client_entries))
 
+    def unsaved_name():
+        """Give the name of the client with unsaved changes, or "" if none."""
+        if read_entries(client_entries) == saved_form:
+            return ""
+        if client_entries["ID"].get():
+            return saved_form["Name"]
+        return "the new client"
+
     def ok_to_leave_form():
         """Give True if nothing is unsaved, or the agent discards it."""
-        if read_entries(client_entries) == saved_form:
-            return True
-        if client_entries["ID"].get():
-            name = saved_form["Name"]
-        else:
-            name = "the new client"
-        return confirm_discard(clients_tab, name)
+        name = unsaved_name()
+        return not name or confirm_discard(clients_tab, name)
 
     def clear_form():
         """Clear every box in the form."""
@@ -553,6 +628,8 @@ def create_clients_tab(clients_tab, records):
         client_entries["ID"].config(state="readonly")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
+        flights_button.config(state="disabled")
+        book_button.config(state="disabled")
         show_message(message_label, "Form cleared. Fill in the details "
                                     "to add a new client.")
         client_list.selection_remove(client_list.selection())
@@ -579,6 +656,8 @@ def create_clients_tab(clients_tab, records):
                 client_entries["ID"].config(state="readonly")
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
+                flights_button.config(state="normal")
+                book_button.config(state="normal")
                 show_message(message_label, "Showing " + client["Name"] +
                              ". Update details and click Update.")
                 remember_form()
@@ -631,6 +710,17 @@ def create_clients_tab(clients_tab, records):
         else:
             show_message(message_label, name + " was not deleted.")
 
+    def show_client_flights():
+        """Open the Flights tab with only the chosen client's flights."""
+        client_id = int(client_entries["ID"].get())
+        for client in records_of_type(records, "client"):
+            if client["ID"] == client_id:
+                show_flights_for(client["Name"])
+
+    def book_client_flight():
+        """Open the Flights tab with a new flight for the chosen client."""
+        book_flight_for(int(client_entries["ID"].get()))
+
     # Buttons from my sketch: Delete set apart on the right
     button_bar = ttk.Frame(clients_tab)
     button_bar.pack(fill="x", padx=10)
@@ -643,19 +733,27 @@ def create_clients_tab(clients_tab, records):
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
+    flights_button = ttk.Button(button_bar, text="Show flights",
+                                command=show_client_flights)
+    flights_button.pack(side="left", padx=(25, 5))
+    book_button = ttk.Button(button_bar, text="Book flight",
+                             command=book_client_flight)
+    book_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete",
                                command=delete_client)
     delete_button.pack(side="right", padx=5)
 
-    # Update and Delete stay greyed out until a record is selected
+    # These buttons stay greyed out until a client is selected
     update_button.config(state="disabled")
     delete_button.config(state="disabled")
+    flights_button.config(state="disabled")
+    book_button.config(state="disabled")
 
     # Message line shows the agent what happened or what to do
     message_label = ttk.Label(
         clients_tab,
         text="Select a client from the list, or fill in the form to add one.")
-    message_label.pack(anchor="w", padx=10, pady=10)
+    message_label.pack(padx=10, pady=10)
 
     # Search: the Search button, Enter and every key typed filter the list
     def run_search(event=None):
@@ -685,11 +783,11 @@ def create_clients_tab(clients_tab, records):
     # Remember the starting form, so changes can be spotted
     remember_form()
 
-    # Give back the check, so the window can use it when closing
-    return ok_to_leave_form
+    # Give back the unsaved check, so closing can ask about every tab
+    return unsaved_name
     
 
-def create_airlines_tab(airlines_tab, records):
+def create_airlines_tab(airlines_tab, records, show_flights_for):
     """Create the Airlines tab: search bar, list, form, buttons, message."""
 
     # Search bar with Search and Show all buttons, same as on Clients
@@ -722,6 +820,9 @@ def create_airlines_tab(airlines_tab, records):
     airline_list.column("id", width=55, stretch=False)
     airline_list.column("company", width=300)
 
+    # Click a heading to sort by that column
+    sort_rows = add_column_sorting(airline_list)
+
     # Scrollbar, so every airline can be reached
     list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
                                    command=airline_list.yview)
@@ -736,7 +837,9 @@ def create_airlines_tab(airlines_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many airlines are in the list right now."""
+        """Show the count of airlines, after sorting and striping the rows."""
+        sort_rows()
+        stripe_rows(airline_list)
         shown = len(airline_list.get_children())
         total = len(records_of_type(records, "airline"))
         count_label.config(text="Showing " + str(shown) + " of " +
@@ -779,15 +882,18 @@ def create_airlines_tab(airlines_tab, records):
         saved_form.clear()
         saved_form.update(read_entries(airline_entries))
 
+    def unsaved_name():
+        """Give the name of the airline with unsaved changes, or "" if none."""
+        if read_entries(airline_entries) == saved_form:
+            return ""
+        if airline_entries["ID"].get():
+            return saved_form["Company Name"]
+        return "the new airline"
+
     def ok_to_leave_form():
         """Give True if nothing is unsaved, or the agent discards it."""
-        if read_entries(airline_entries) == saved_form:
-            return True
-        if airline_entries["ID"].get():
-            name = saved_form["Company Name"]
-        else:
-            name = "the new airline"
-        return confirm_discard(airlines_tab, name)
+        name = unsaved_name()
+        return not name or confirm_discard(airlines_tab, name)
 
     def clear_form():
         """Clear every box in the airline form."""
@@ -799,6 +905,7 @@ def create_airlines_tab(airlines_tab, records):
         airline_entries["ID"].config(state="readonly")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
+        flights_button.config(state="disabled")
         show_message(message_label, "Form cleared. Fill in the details "
                                     "to add a new airline.")
         airline_list.selection_remove(airline_list.selection())
@@ -825,6 +932,7 @@ def create_airlines_tab(airlines_tab, records):
                 airline_entries["ID"].config(state="readonly")
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
+                flights_button.config(state="normal")
                 company_name = airline["Company Name"]
                 show_message(message_label, "Showing " + company_name +
                              ". Update details and click Update.")
@@ -873,6 +981,13 @@ def create_airlines_tab(airlines_tab, records):
         else:
             show_message(message_label, name + " was not deleted.")
 
+    def show_airline_flights():
+        """Open the Flights tab with only the chosen airline's flights."""
+        airline_id = int(airline_entries["ID"].get())
+        for airline in records_of_type(records, "airline"):
+            if airline["ID"] == airline_id:
+                show_flights_for(airline["Company Name"])
+
     # Buttons in the same places as on the Clients tab
     button_bar = ttk.Frame(airlines_tab)
     button_bar.pack(fill="x", padx=10)
@@ -885,20 +1000,24 @@ def create_airlines_tab(airlines_tab, records):
     update_button.pack(side="left", padx=5)
     clear_button = ttk.Button(button_bar, text="Clear", command=clear_form)
     clear_button.pack(side="left", padx=5)
+    flights_button = ttk.Button(button_bar, text="Show flights",
+                                command=show_airline_flights)
+    flights_button.pack(side="left", padx=(25, 5))
     delete_button = ttk.Button(button_bar, text="Delete",
                                command=delete_airline)
     delete_button.pack(side="right", padx=5)
 
-    # Update and Delete stay greyed out until a record is selected
+    # Update, Delete and Show flights are greyed out until one is selected
     update_button.config(state="disabled")
     delete_button.config(state="disabled")
+    flights_button.config(state="disabled")
 
     # Message line shows the agent what happened or what to do
     message_label = ttk.Label(
         airlines_tab,
         text="Select an airline from the list, "
              "or fill in the form to add one.")
-    message_label.pack(anchor="w", padx=10, pady=10)
+    message_label.pack(padx=10, pady=10)
 
     # Search: the Search button, Enter and every key typed filter the list
     def run_search(event=None):
@@ -928,8 +1047,8 @@ def create_airlines_tab(airlines_tab, records):
     # Remember the starting form, so changes can be spotted
     remember_form()
 
-    # Give back the check, so the window can use it when closing
-    return ok_to_leave_form
+    # Give back the unsaved check, so closing can ask about every tab
+    return unsaved_name
 
 
 def create_flights_tab(flights_tab, records):
@@ -973,6 +1092,9 @@ def create_flights_tab(flights_tab, records):
     flight_list.column("from", width=120)
     flight_list.column("to", width=120)
 
+    # Click a heading to sort by that column
+    sort_rows = add_column_sorting(flight_list)
+
     # Scrollbar, so every flight can be reached
     list_scrollbar = ttk.Scrollbar(list_frame, orient="vertical",
                                    command=flight_list.yview)
@@ -989,7 +1111,9 @@ def create_flights_tab(flights_tab, records):
     count_label.pack(anchor="w", padx=10)
 
     def update_count():
-        """Show how many flights are in the list right now."""
+        """Show the count of flights, after sorting and striping the rows."""
+        sort_rows()
+        stripe_rows(flight_list)
         shown = len(flight_list.get_children())
         total = len(records_of_type(records, "flight"))
         count_label.config(text="Showing " + str(shown) + " of " +
@@ -1184,20 +1308,23 @@ def create_flights_tab(flights_tab, records):
         saved_form.clear()
         saved_form.update(read_form())
 
+    def unsaved_name():
+        """Give the name of the flight with unsaved changes, or "" if none."""
+        if read_form() == saved_form:
+            return ""
+        if id_entry.get():
+            return "flight " + id_entry.get()
+        return "the new flight"
+
     def ok_to_leave_form():
         """Give True if nothing is unsaved, or the agent discards it."""
-        if read_form() == saved_form:
-            return True
-        if id_entry.get():
-            name = "flight " + id_entry.get()
-        else:
-            name = "the new flight"
-        return confirm_discard(flights_tab, name)
+        name = unsaved_name()
+        return not name or confirm_discard(flights_tab, name)
 
     def clear_form():
         """Empty the flight form, ready to add a new flight."""
         if not ok_to_leave_form():
-            return
+            return False
         id_entry.config(state="normal")
         id_entry.delete(0, "end")
         id_entry.config(state="readonly")
@@ -1212,6 +1339,7 @@ def create_flights_tab(flights_tab, records):
                                     "to add a new flight.")
         flight_list.selection_remove(flight_list.selection())
         remember_form()
+        return True
 
     def fill_form(event):
         """Show the details of the chosen flight in the form."""
@@ -1353,7 +1481,7 @@ def create_flights_tab(flights_tab, records):
     message_label = ttk.Label(
         flights_tab,
         text="Select a flight from the list, or fill in the form to add one.")
-    message_label.pack(anchor="w", padx=10, pady=10)
+    message_label.pack(padx=10, pady=10)
 
     # Search: the Search button, Enter and every key typed filter the list
     def run_search(event=None):
@@ -1378,8 +1506,25 @@ def create_flights_tab(flights_tab, records):
     # Remember the starting form, so changes can be spotted
     remember_form()
 
-    # Give back the check, so the window can use it when closing
-    return ok_to_leave_form
+    def search_for(text):
+        """Put text in the search box and show only the matching flights."""
+        search_field.delete(0, "end")
+        search_field.insert(0, text)
+        run_search()
+
+    def book_for(client_id):
+        """Start a new flight for this client: empty form, client chosen."""
+        if not clear_form():
+            show_message(message_label, "New flight not started. Your "
+                         "unsaved changes are still in the form.", "warning")
+            return
+        refresh_lists()      # so a client added a moment ago is listed
+        client_box.set(find_choice(client_choices, client_id))
+        client_chosen(None)
+        to_box.focus_set()
+
+    # Give back the unsaved check, and the search and booking for other tabs
+    return unsaved_name, search_for, book_for
 
 
 def create_main_window():
@@ -1387,13 +1532,23 @@ def create_main_window():
 
     main_window = tk.Tk()
     main_window.title("Travel Agent Record Manager")
-    main_window.geometry("1000x650")
+    main_window.geometry("1000x720")
 
     # Form titles: the app's normal font, but bold
     title_font = font.nametofont("TkDefaultFont").copy()
     title_font.configure(weight="bold")
     style = ttk.Style()
     style.configure("TLabelframe.Label", font=title_font)
+
+    # Selected row: clear blue with white text, even when the cursor is
+    # in the form, so it stands out from the striped rows
+    selected_background = [("selected", "#2a62c9")]
+    selected_text = [("selected", "white")]
+    style.map("Treeview",
+              background=selected_background +
+              style.map("Treeview", "background"),
+              foreground=selected_text +
+              style.map("Treeview", "foreground"))
 
     # All records in one list of dictionaries, as the brief asks.
     # For now the sample data; later: records = load_records(DATA_FILE)
@@ -1406,15 +1561,30 @@ def create_main_window():
     # One tab for each type of record in the same order as in my sketch
     clients_tab = ttk.Frame(tab_bar)
     tab_bar.add(clients_tab, text="Clients")
-    clients_form_check = create_clients_tab(clients_tab, records)
-
     airlines_tab = ttk.Frame(tab_bar)
     tab_bar.add(airlines_tab, text="Airlines")
-    airlines_form_check = create_airlines_tab(airlines_tab, records)
-
     flights_tab = ttk.Frame(tab_bar)
     tab_bar.add(flights_tab, text="Flights")
-    flights_form_check = create_flights_tab(flights_tab, records)
+
+    # The Flights tab is filled first, so Clients and Airlines can open it
+    flights_unsaved, search_flights, start_booking = (
+        create_flights_tab(flights_tab, records))
+
+    def show_flights_for(name):
+        """Open the Flights tab, showing only the flights for this name."""
+        search_flights(name)
+        tab_bar.select(flights_tab)
+
+    def book_flight_for(client_id):
+        """Open the Flights tab with a new flight for this client."""
+        tab_bar.select(flights_tab)
+        tab_bar.update_idletasks()   # draw the Flights tab before any question
+        start_booking(client_id)
+
+    clients_unsaved = create_clients_tab(clients_tab, records,
+                                         show_flights_for, book_flight_for)
+    airlines_unsaved = create_airlines_tab(airlines_tab, records,
+                                           show_flights_for)
 
     def show_how_to_use():
         """Show the short guide to the main tasks."""
@@ -1436,16 +1606,22 @@ def create_main_window():
     main_window.config(menu=menu_bar)
 
     def close_app():
-        """Check every form for unsaved changes, then close the window."""
-        for ok_to_leave_form in (clients_form_check, airlines_form_check,
-                                 flights_form_check):
-            if not ok_to_leave_form():
-                return
+        """Ask once about every unsaved form, then close the window."""
+        names = [name for name in (clients_unsaved(), airlines_unsaved(),
+                                   flights_unsaved()) if name]
+        if names and not confirm_discard(main_window, " and ".join(names)):
+            return
         # To connect: save_records(records, DATA_FILE) from storage.py
         main_window.destroy()
 
     # Run close_app when the agent closes the window
     main_window.protocol("WM_DELETE_WINDOW", close_app)
+
+    # Never let the window get so small that buttons or the message
+    # line are cut off
+    main_window.update_idletasks()
+    main_window.minsize(main_window.winfo_reqwidth(),
+                        main_window.winfo_reqheight())
 
     return main_window
 
