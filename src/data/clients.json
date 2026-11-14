@@ -1,0 +1,97 @@
+[
+    {"ID": 1, "Type": "client", "Name": "Anna Schmidt",
+     "Address Line 1": "Bergerstraße 12", "Address Line 2": "",
+     "Address Line 3": "", "City": "Frankfurt", "State": "",
+     "Zip Code": "", "Country": "Germany",
+     "Phone Number": "+49 69 1234 5678"},
+
+    {"ID": 2, "Type": "client", "Name": "Stella Cortner",
+     "Address Line 1": "ul. Marszałkowska 84", "Address Line 2": "",
+     "Address Line 3": "", "City": "Warsaw", "State": "",
+     "Zip Code": "", "Country": "Poland",
+     "Phone Number": "+48 22 123 45 67"},
+
+    {"ID": 3, "Type": "client", "Name": "Patrick Walkman",
+     "Address Line 1": "27 Elm Grove", "Address Line 2": "Islington",
+     "Address Line 3": "", "City": "London", "State": "",
+     "Zip Code": "N1 7QP", "Country": "UK",
+     "Phone Number": "020 7946 0321"},
+
+    {"ID": 4, "Type": "client", "Name": "Paul Jefferson",
+     "Address Line 1": "1450 Maple Avenue", "Address Line 2": "",
+     "Address Line 3": "", "City": "Columbus", "State": "",
+     "Zip Code": "", "Country": "USA",
+     "Phone Number": "(614) 555-0142"},
+
+    {"ID": 5, "Type": "client", "Name": "Maria Rossi",
+     "Address Line 1": "Via Garibaldi 8", "Address Line 2": "",
+     "Address Line 3": "", "City": "Rome", "State": "",
+     "Zip Code": "", "Country": "Italy",
+     "Phone Number": "+39 06 1234 5678"},
+
+    {"ID": 6, "Type": "client", "Name": "Kenji Tanaka",
+     "Address Line 1": "Sakura Mansion, Room 503", "Address Line 2": "",
+     "Address Line 3": "", "City": "Tokyo", "State": "",
+     "Zip Code": "", "Country": "Japan",
+     "Phone Number": "+81 3 1234 5678"},
+
+    {"ID": 7, "Type": "client", "Name": "Emily Hargreaves",
+     "Address Line 1": "14 Wellington Road", "Address Line 2": "Camden",
+     "Address Line 3": "", "City": "London", "State": "",
+     "Zip Code": "NW1 8AB", "Country": "UK",
+     "Phone Number": "020 7946 0587"},
+
+    {"ID": 8, "Type": "client", "Name": "Leyla Mammadova",
+     "Address Line 1": "Nizami küçəsi 45", "Address Line 2": "",
+     "Address Line 3": "", "City": "Baku", "State": "",
+     "Zip Code": "AZ1000", "Country": "Azerbaijan",
+     "Phone Number": "+994 12 345 67 89"},
+
+    {"ID": 9, "Type": "client", "Name": "Li Wei",
+     "Address Line 1": "88 Nanjing Road", "Address Line 2": "",
+     "Address Line 3": "", "City": "Shanghai", "State": "",
+     "Zip Code": "200001", "Country": "China",
+     "Phone Number": "+86 21 1234 5678"},
+
+    {"ID": 10, "Type": "client", "Name": "Alejandro Hernández Gutiérrez",
+     "Address Line 1":
+         "Avenida Paseo de la Reforma 2620, Piso 14, Oficina 1403",
+     "Address Line 2": "Colonia Lomas Altas",
+     "Address Line 3": "", "City": "Mexico City", "State": "CDMX",
+     "Zip Code": "11950", "Country": "Mexico",
+     "Phone Number": "+52 55 1234 5678"},
+
+    {"ID": 11, "Type": "client", "Name": "Sanne de Vries",
+     "Address Line 1": "Keizersgracht 215", "Address Line 2": "",
+     "Address Line 3": "", "City": "Amsterdam", "State": "",
+     "Zip Code": "1016 DV", "Country": "Netherlands",
+     "Phone Number": "+31 20 123 4567"},
+
+    {"ID": 12, "Type": "client", "Name": "Nguyễn Thị Lan",
+     "Address Line 1": "25 Hàng Bài Street",
+     "Address Line 2": "Hoàn Kiếm District",
+     "Address Line 3": "", "City": "Hanoi", "State": "",
+     "Zip Code": "", "Country": "Vietnam",
+     "Phone Number": "+84 24 1234 5678"},
+
+    {"ID": 13, "Type": "client", "Name": "Tan Wei Ming",
+     "Address Line 1": "Blk 123 Ang Mo Kio Avenue 3, #08-1234",
+     "Address Line 2": "", "Address Line 3": "",
+     "City": "Singapore", "State": "",
+     "Zip Code": "560123", "Country": "Singapore",
+     "Phone Number": "+65 6123 4567"},
+
+    {"ID": 14, "Type": "client", "Name": "Ivan Petrov",
+     "Address Line 1": "ul. Tverskaya 7", "Address Line 2": "",
+     "Address Line 3": "", "City": "Moscow", "State": "",
+     "Zip Code": "125009", "Country": "Russia",
+     "Phone Number": "+7 495 123 45 67"},
+     
+    {"ID": 15, "Type": "client", "Name": "Olga Smirnova",
+     "Address Line 1": "Nevsky Prospekt 28",
+     "Address Line 2": "Apartment 14",
+     "Address Line 3": "Entrance 2, Floor 4",
+     "City": "Saint Petersburg", "State": "",
+     "Zip Code": "191186", "Country": "Russia",
+     "Phone Number": "+7 812 123 45 67"}
+]
