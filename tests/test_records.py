@@ -1,8 +1,15 @@
 """Tests for record-management logic."""
 
+import sys
 import unittest
+from pathlib import Path
 
-from src.record.records import (
+sys.path.insert(
+    0,
+    str(Path(__file__).resolve().parent.parent / "src"),
+)
+
+from record.records import (
     create_record,
     delete_record,
     get_next_id,
@@ -12,10 +19,6 @@ from src.record.records import (
     validate_flight_relationships,
     validate_required_fields,
 )
-
-import unittest
-
-from src.record.records import get_next_id
 
 
 class TestGetNextID(unittest.TestCase):

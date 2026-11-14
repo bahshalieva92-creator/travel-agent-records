@@ -1,10 +1,16 @@
-"""Tests for JSONL record storage."""
+"""Tests for JSON Lines storage."""
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from src.data.storage import load_records, save_records
+sys.path.insert(
+    0,
+    str(Path(__file__).resolve().parent.parent / "src"),
+)
+
+from data.storage import load_records, save_records
 
 
 class TestStorage(unittest.TestCase):

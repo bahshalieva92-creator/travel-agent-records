@@ -1,16 +1,21 @@
 """Integration tests for record management and JSONL persistence."""
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from src.data.storage import load_records, save_records
-from src.record.records import (
+sys.path.insert(
+    0,
+    str(Path(__file__).resolve().parent.parent / "src"),
+)
+
+from data.storage import load_records, save_records
+from record.records import (
     create_record,
     delete_record,
     update_record,
 )
-
 
 class TestPersistenceIntegration(unittest.TestCase):
 

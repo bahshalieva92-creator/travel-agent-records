@@ -4,7 +4,7 @@ from src.conf.config import RECORD_TYPES, REQUIRED_FIELDS
 
 """Record-management logic for the travel agent application."""
 
-from src.conf.config import RECORD_TYPES
+from conf.config import RECORD_TYPES
 
 
 def get_next_id(records: list[dict], record_type: str) -> int:
