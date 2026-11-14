@@ -1406,7 +1406,7 @@ def create_main_window():
 
     main_window = tk.Tk()
     main_window.title("Travel Agent Record Manager")
-    main_window.geometry("1000x650")
+    main_window.geometry("1000x720")
 
     # Form titles: the app's normal font, but bold
     title_font = font.nametofont("TkDefaultFont").copy()
@@ -1475,6 +1475,12 @@ def create_main_window():
 
     # Run close_app when the agent closes the window
     main_window.protocol("WM_DELETE_WINDOW", close_app)
+
+    # Never let the window get so small that buttons or the message
+    # line are cut off
+    main_window.update_idletasks()
+    main_window.minsize(main_window.winfo_reqwidth(),
+                        main_window.winfo_reqheight())
 
     return main_window
 
