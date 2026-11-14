@@ -487,7 +487,8 @@ def show_flights(flight_list, flights, clients, airlines):
             flight["Start City"], flight["End City"]))
 
 
-def create_clients_tab(clients_tab, records, show_flights_for):
+def create_clients_tab(clients_tab, records, show_flights_for,
+                       book_flight_for):
     """Create the Clients tab: search bar, list, form, buttons, message."""
 
     # Search bar with Search and Show all buttons
@@ -622,6 +623,7 @@ def create_clients_tab(clients_tab, records, show_flights_for):
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
         flights_button.config(state="disabled")
+        book_button.config(state="disabled")
         show_message(message_label, "Form cleared. Fill in the details "
                                     "to add a new client.")
         client_list.selection_remove(client_list.selection())
@@ -649,6 +651,7 @@ def create_clients_tab(clients_tab, records, show_flights_for):
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
                 flights_button.config(state="normal")
+                book_button.config(state="normal")
                 show_message(message_label, "Showing " + client["Name"] +
                              ". Update details and click Update.")
                 remember_form()
@@ -708,6 +711,10 @@ def create_clients_tab(clients_tab, records, show_flights_for):
             if client["ID"] == client_id:
                 show_flights_for(client["Name"])
 
+    def book_client_flight():
+        """Open the Flights tab with a new flight for the chosen client."""
+        book_flight_for(int(client_entries["ID"].get()))
+
     # Buttons from my sketch: Delete set apart on the right
     button_bar = ttk.Frame(clients_tab)
     button_bar.pack(fill="x", padx=10)
@@ -723,14 +730,18 @@ def create_clients_tab(clients_tab, records, show_flights_for):
     flights_button = ttk.Button(button_bar, text="Show flights",
                                 command=show_client_flights)
     flights_button.pack(side="left", padx=(25, 5))
+    book_button = ttk.Button(button_bar, text="Book flight",
+                             command=book_client_flight)
+    book_button.pack(side="left", padx=5)
     delete_button = ttk.Button(button_bar, text="Delete",
                                command=delete_client)
     delete_button.pack(side="right", padx=5)
 
-    # Update, Delete and Show flights are greyed out until one is selected
+    # These buttons stay greyed out until a client is selected
     update_button.config(state="disabled")
     delete_button.config(state="disabled")
     flights_button.config(state="disabled")
+    book_button.config(state="disabled")
 
     # Message line shows the agent what happened or what to do
     message_label = ttk.Label(
@@ -1301,7 +1312,7 @@ def create_flights_tab(flights_tab, records):
     def clear_form():
         """Empty the flight form, ready to add a new flight."""
         if not ok_to_leave_form():
-            return
+            return False
         id_entry.config(state="normal")
         id_entry.delete(0, "end")
         id_entry.config(state="readonly")
@@ -1316,6 +1327,7 @@ def create_flights_tab(flights_tab, records):
                                     "to add a new flight.")
         flight_list.selection_remove(flight_list.selection())
         remember_form()
+        return True
 
     def fill_form(event):
         """Show the details of the chosen flight in the form."""
@@ -1488,8 +1500,19 @@ def create_flights_tab(flights_tab, records):
         search_field.insert(0, text)
         run_search()
 
-    # Give back the check for closing, and the search for the other tabs
-    return ok_to_leave_form, search_for
+    def book_for(client_id):
+        """Start a new flight for this client: empty form, client chosen."""
+        if not clear_form():
+            show_message(message_label, "New flight not started. Your "
+                         "unsaved changes are still in the form.", "warning")
+            return
+        refresh_lists()      # so a client added a moment ago is listed
+        client_box.set(find_choice(client_choices, client_id))
+        client_chosen(None)
+        to_box.focus_set()
+
+    # Give back the closing check, and the search and booking for other tabs
+    return ok_to_leave_form, search_for, book_for
 
 
 def create_main_window():
@@ -1532,16 +1555,23 @@ def create_main_window():
     tab_bar.add(flights_tab, text="Flights")
 
     # The Flights tab is filled first, so Clients and Airlines can open it
-    flights_form_check, search_flights = create_flights_tab(flights_tab,
-                                                            records)
+    flights_form_check, search_flights, start_booking = (
+        create_flights_tab(flights_tab, records))
 
     def show_flights_for(name):
         """Open the Flights tab, showing only the flights for this name."""
         search_flights(name)
         tab_bar.select(flights_tab)
 
+    def book_flight_for(client_id):
+        """Open the Flights tab with a new flight for this client."""
+        tab_bar.select(flights_tab)
+        tab_bar.update_idletasks()   # draw the Flights tab before any question
+        start_booking(client_id)
+
     clients_form_check = create_clients_tab(clients_tab, records,
-                                            show_flights_for)
+                                            show_flights_for,
+                                            book_flight_for)
     airlines_form_check = create_airlines_tab(airlines_tab, records,
                                               show_flights_for)
 
