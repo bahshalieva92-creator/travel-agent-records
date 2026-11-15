@@ -11,7 +11,7 @@ import re
 
 # The team's back end (PR #8): file location and storage
 from conf.config import DATA_FILE
-from data.storage import load_records
+from data.storage import load_records, save_records
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -37,7 +37,8 @@ HOW_TO_USE = (
     "and To.\n"
     "Book flight (Clients): starts a new flight for the chosen client.\n"
     "Show flights (Clients, Airlines): lists the chosen record's flights.\n"
-    "The message under the buttons says what happened or what to do next."
+    "The message under the buttons says what happened or what to do next.\n"
+    "Your changes are saved when you close the app."
 )
 
 # Shortcut key: Command on a Mac, Control on Windows and Linux
@@ -1462,7 +1463,12 @@ def create_main_window():
                                    flights_unsaved()) if name]
         if names and not confirm_discard(main_window, " and ".join(names)):
             return
-        # To connect: save_records(records, DATA_FILE) from storage.py
+        try:
+            save_records(records, DATA_FILE)
+        except ValueError as problem:
+            messagebox.showerror("Records not saved", str(problem),
+                                 parent=main_window)
+            return
         main_window.destroy()
 
     # Run close_app when the agent closes the window
