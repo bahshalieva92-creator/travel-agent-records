@@ -305,6 +305,11 @@ def choice_name(choice):
     return choice.split(" – ", 1)[-1]
 
 
+def choice_id(choice):
+    """Give the ID part of an "ID – name" choice, as a number."""
+    return int(choice.split(" – ", 1)[0])
+
+
 def city_choices(clients, flights):
     """Make the city suggestions: every city already used, sorted A-Z."""
     cities = set()
@@ -1188,6 +1193,14 @@ def create_flights_tab(flights_tab, records):
                           minute_box.get())
         return values
 
+    def flight_details():
+        """Give the form with the field names that records.py uses."""
+        values = read_form()
+        return {"Client_ID": choice_id(values["Client"]),
+                "Airline_ID": choice_id(values["Airline"]),
+                "Date": values["Date"], "Start City": values["From"],
+                "End City": values["To"]}
+
     # The form as it was last filled or cleared, to spot unsaved changes
     saved_form = {}
 
@@ -1316,18 +1329,30 @@ def create_flights_tab(flights_tab, records):
     def create_flight():
         """Check the form, then add it as a new flight."""
         if check_form():
-            # To connect: create_record(records, new_flight) from records.py
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                flight = create_record(records, "flight", flight_details())
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            refresh_lists()
+            show_message(message_label, "Flight " + str(flight["ID"]) +
+                         " was added.", "success")
 
     def update_flight():
         """Check the form, then save the changes to the chosen flight."""
         if check_form():
-            # To connect: update_record(records, "flight", ID, new_values)
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                update_record(records, "flight", int(id_entry.get()),
+                              flight_details())
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            refresh_lists()
+            show_message(message_label, "Flight " + id_entry.get() +
+                         " was updated.", "success")
 
     def delete_flight():
         """Ask first, then delete the chosen flight."""
@@ -1338,10 +1363,16 @@ def create_flights_tab(flights_tab, records):
         name = ("flight " + str(values[0]) + " (" + values[2] + ", " +
                 values[4] + " → " + values[5] + ")")
         if confirm_delete(flights_tab, name):
-            # To connect: delete_record(records, "flight", ID) from records.py
-            show_message(message_label, "Delete confirmed. Deleting will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                delete_record(records, "flight", int(selected[0]))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            refresh_lists()
+            show_message(message_label, "Flight " + str(values[0]) +
+                         " was deleted.", "success")
         else:
             show_message(message_label, name + " was not deleted.")
 
