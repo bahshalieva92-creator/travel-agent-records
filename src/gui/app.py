@@ -821,18 +821,33 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
     def create_airline():
         """Check the form, then add it as a new airline."""
         if check_form():
-            # To connect: create_record(records, new_airline) from records.py
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            details = read_entries(airline_entries)
+            del details["ID"]        # create_record() gives the new ID
+            try:
+                airline = create_record(records, "airline", details)
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, airline["Company Name"] + " was added "
+                         "with ID " + str(airline["ID"]) + ".", "success")
 
     def update_airline():
         """Check the form, then save the changes to the chosen airline."""
         if check_form():
-            # To connect: update_record(records, "airline", ID, new_values)
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            airline_id = int(airline_entries["ID"].get())
+            try:
+                airline = update_record(records, "airline", airline_id,
+                                       read_entries(airline_entries))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            run_search()
+            show_message(message_label, airline["Company Name"] +
+                         " was updated.", "success")
 
     def delete_airline():
         """Ask first, then delete the chosen airline."""
@@ -842,10 +857,15 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
         values = airline_list.item(selected[0], "values")
         name = values[1]
         if confirm_delete(airlines_tab, name):
-            # To connect: delete_record(records, "airline", ID) from records.py
-            show_message(message_label, "Delete confirmed. Deleting will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                delete_record(records, "airline", int(selected[0]))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, name + " was deleted.", "success")
         else:
             show_message(message_label, name + " was not deleted.")
 
