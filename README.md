@@ -31,7 +31,9 @@ Search and record-management operations are not yet connected to the underlying 
 - Python 3.14
 - GitHub Desktop
 - Python IDLE or another suitable code editor
-- Dependencies listed in `requirements.txt`, if required
+- The `jsonlines` package. Install it once from the project folder:
+  - macOS: `python3.14 -m pip install -r requirements.txt`
+  - Windows: `py -m pip install -r requirements.txt`
 
 ## Running the application
 
