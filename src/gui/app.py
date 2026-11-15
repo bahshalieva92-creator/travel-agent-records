@@ -9,9 +9,10 @@ import unicodedata
 import sys
 import re
 
-# The team's back end (PR #8): file location and storage
+# The team's back end (PR #8): file location, storage and records
 from conf.config import DATA_FILE
 from data.storage import load_records, save_records
+from record.records import create_record, delete_record, update_record
 
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
@@ -529,18 +530,33 @@ def create_clients_tab(clients_tab, records, show_flights_for,
     def create_client():
         """Check the form, then add it as a new client."""
         if check_form():
-            # To connect: create_record(records, new_client) from records.py
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            details = read_entries(client_entries)
+            del details["ID"]        # create_record() gives the new ID
+            try:
+                client = create_record(records, "client", details)
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, client["Name"] + " was added "
+                         "with ID " + str(client["ID"]) + ".", "success")
 
     def update_client():
         """Check the form, then save the changes to the chosen client."""
         if check_form():
-            # To connect: update_record(records, "client", ID, new_values)
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            client_id = int(client_entries["ID"].get())
+            try:
+                client = update_record(records, "client", client_id,
+                                       read_entries(client_entries))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            run_search()
+            show_message(message_label, client["Name"] +
+                         " was updated.", "success")
 
     def delete_client():
         """Ask first, then delete the chosen client."""
@@ -550,10 +566,15 @@ def create_clients_tab(clients_tab, records, show_flights_for,
         values = client_list.item(selected[0], "values")
         name = values[1]
         if confirm_delete(clients_tab, name):
-            # To connect: delete_record(records, "client", ID) from records.py
-            show_message(message_label, "Delete confirmed. Deleting will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                delete_record(records, "client", int(selected[0]))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, name + " was deleted.", "success")
         else:
             show_message(message_label, name + " was not deleted.")
 
