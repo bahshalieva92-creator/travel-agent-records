@@ -479,6 +479,7 @@ def create_clients_tab(clients_tab, records, show_flights_for,
             entry.config(state="normal")
             entry.delete(0, "end")
         client_entries["ID"].config(state="readonly")
+        create_button.config(state="normal")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
         flights_button.config(state="disabled")
@@ -507,6 +508,7 @@ def create_clients_tab(clients_tab, records, show_flights_for,
                     entry.delete(0, "end")
                     entry.insert(0, client[field])
                 client_entries["ID"].config(state="readonly")
+                create_button.config(state="disabled")
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
                 flights_button.config(state="normal")
@@ -776,6 +778,7 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
             entry.config(state="normal")
             entry.delete(0, "end")
         airline_entries["ID"].config(state="readonly")
+        create_button.config(state="normal")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
         flights_button.config(state="disabled")
@@ -803,6 +806,7 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
                     entry.delete(0, "end")
                     entry.insert(0, airline[field])
                 airline_entries["ID"].config(state="readonly")
+                create_button.config(state="disabled")
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
                 flights_button.config(state="normal")
@@ -1234,6 +1238,7 @@ def create_flights_tab(flights_tab, records):
         to_box.set("")
         show_date_and_time(start_date)
         airline_box.set("")
+        create_button.config(state="normal")
         update_button.config(state="disabled")
         delete_button.config(state="disabled")
         show_message(message_label, "Form cleared. Fill in the details "
@@ -1267,6 +1272,7 @@ def create_flights_tab(flights_tab, records):
                 show_date_and_time(flight["Date"])
                 airline_box.set(find_choice(airline_choices,
                                             flight["Airline_ID"]))
+                create_button.config(state="disabled")
                 update_button.config(state="normal")
                 delete_button.config(state="normal")
                 show_message(
