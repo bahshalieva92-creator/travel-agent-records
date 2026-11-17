@@ -9,6 +9,11 @@ import unicodedata
 import sys
 import re
 
+# The team's back end (PR #8): file location, storage and records
+from conf.config import DATA_FILE
+from data.storage import load_records, save_records
+from record.records import create_record, delete_record, update_record
+
 # Message colours. Each message also starts with a symbol (✓ success,
 # ✗ error, ⚠ warning), so colour is never the only signal, which helps
 # colour-blind agents.
@@ -33,7 +38,8 @@ HOW_TO_USE = (
     "and To.\n"
     "Book flight (Clients): starts a new flight for the chosen client.\n"
     "Show flights (Clients, Airlines): lists the chosen record's flights.\n"
-    "The message under the buttons says what happened or what to do next."
+    "The message under the buttons says what happened or what to do next.\n"
+    "Your changes are saved when you close the app."
 )
 
 # Shortcut key: Command on a Mac, Control on Windows and Linux
@@ -48,164 +54,6 @@ KEYBOARD_SHORTCUTS = (
     "Esc: clear the search and show every record.\n"
     "Tab: move to the next box in the form."
 )
-
-# These are 6 sample client details from my sketch plus 9 new random ones
-# to try out before the team's load function is ready.
-SAMPLE_CLIENTS = [
-    {"ID": 1, "Type": "client", "Name": "Anna Schmidt",
-     "Address Line 1": "Bergerstraße 12", "Address Line 2": "",
-     "Address Line 3": "", "City": "Frankfurt", "State": "",
-     "Zip Code": "", "Country": "Germany",
-     "Phone Number": "+49 69 1234 5678"},
-    {"ID": 2, "Type": "client", "Name": "Stella Cortner",
-     "Address Line 1": "ul. Marszałkowska 84", "Address Line 2": "",
-     "Address Line 3": "", "City": "Warsaw", "State": "",
-     "Zip Code": "", "Country": "Poland",
-     "Phone Number": "+48 22 123 45 67"},
-    {"ID": 3, "Type": "client", "Name": "Patrick Walkman",
-     "Address Line 1": "27 Elm Grove", "Address Line 2": "Islington",
-     "Address Line 3": "", "City": "London", "State": "",
-     "Zip Code": "N1 7QP", "Country": "UK",
-     "Phone Number": "020 7946 0321"},
-    {"ID": 4, "Type": "client", "Name": "Paul Jefferson",
-     "Address Line 1": "1450 Maple Avenue", "Address Line 2": "",
-     "Address Line 3": "", "City": "Columbus", "State": "",
-     "Zip Code": "", "Country": "USA",
-     "Phone Number": "(614) 555-0142"},
-    {"ID": 5, "Type": "client", "Name": "Maria Rossi",
-     "Address Line 1": "Via Garibaldi 8", "Address Line 2": "",
-     "Address Line 3": "", "City": "Rome", "State": "",
-     "Zip Code": "", "Country": "Italy",
-     "Phone Number": "+39 06 1234 5678"},
-    {"ID": 6, "Type": "client", "Name": "Kenji Tanaka",
-     "Address Line 1": "Sakura Mansion, Room 503", "Address Line 2": "",
-     "Address Line 3": "", "City": "Tokyo", "State": "",
-     "Zip Code": "", "Country": "Japan",
-     "Phone Number": "+81 3 1234 5678"},
-    {"ID": 7, "Type": "client", "Name": "Emily Hargreaves",
-     "Address Line 1": "14 Wellington Road", "Address Line 2": "Camden",
-     "Address Line 3": "", "City": "London", "State": "",
-     "Zip Code": "NW1 8AB", "Country": "UK",
-     "Phone Number": "020 7946 0587"},
-    {"ID": 8, "Type": "client", "Name": "Leyla Mammadova",
-     "Address Line 1": "Nizami küçəsi 45", "Address Line 2": "",
-     "Address Line 3": "", "City": "Baku", "State": "",
-     "Zip Code": "AZ1000", "Country": "Azerbaijan",
-     "Phone Number": "+994 12 345 67 89"},
-    {"ID": 9, "Type": "client", "Name": "Li Wei",
-     "Address Line 1": "88 Nanjing Road", "Address Line 2": "",
-     "Address Line 3": "", "City": "Shanghai", "State": "",
-     "Zip Code": "200001", "Country": "China",
-     "Phone Number": "+86 21 1234 5678"},
-    {"ID": 10, "Type": "client", "Name": "Alejandro Hernández Gutiérrez",
-     "Address Line 1":
-         "Avenida Paseo de la Reforma 2620, Piso 14, Oficina 1403",
-     "Address Line 2": "Colonia Lomas Altas",
-     "Address Line 3": "", "City": "Mexico City", "State": "CDMX",
-     "Zip Code": "11950", "Country": "Mexico",
-     "Phone Number": "+52 55 1234 5678"},
-    {"ID": 11, "Type": "client", "Name": "Sanne de Vries",
-     "Address Line 1": "Keizersgracht 215", "Address Line 2": "",
-     "Address Line 3": "", "City": "Amsterdam", "State": "",
-     "Zip Code": "1016 DV", "Country": "Netherlands",
-     "Phone Number": "+31 20 123 4567"},
-    {"ID": 12, "Type": "client", "Name": "Nguyễn Thị Lan",
-     "Address Line 1": "25 Hàng Bài Street",
-     "Address Line 2": "Hoàn Kiếm District",
-     "Address Line 3": "", "City": "Hanoi", "State": "",
-     "Zip Code": "", "Country": "Vietnam",
-     "Phone Number": "+84 24 1234 5678"},
-    {"ID": 13, "Type": "client", "Name": "Tan Wei Ming",
-     "Address Line 1": "Blk 123 Ang Mo Kio Avenue 3, #08-1234",
-     "Address Line 2": "", "Address Line 3": "",
-     "City": "Singapore", "State": "",
-     "Zip Code": "560123", "Country": "Singapore",
-     "Phone Number": "+65 6123 4567"},
-    {"ID": 14, "Type": "client", "Name": "Ivan Petrov",
-     "Address Line 1": "ul. Tverskaya 7", "Address Line 2": "",
-     "Address Line 3": "", "City": "Moscow", "State": "",
-     "Zip Code": "125009", "Country": "Russia",
-     "Phone Number": "+7 495 123 45 67"},
-    {"ID": 15, "Type": "client", "Name": "Olga Smirnova",
-     "Address Line 1": "Nevsky Prospekt 28",
-     "Address Line 2": "Apartment 14",
-     "Address Line 3": "Entrance 2, Floor 4",
-     "City": "Saint Petersburg", "State": "",
-     "Zip Code": "191186", "Country": "Russia",
-     "Phone Number": "+7 812 123 45 67"},
-]
-
-# These are 6 sample airlines from my sketch plus 9
-# more from my clients' countries to try out
-SAMPLE_AIRLINES = [
-    {"ID": 1, "Type": "airline", "Company Name": "Aeroflot"},
-    {"ID": 2, "Type": "airline", "Company Name": "Turkish Airlines"},
-    {"ID": 3, "Type": "airline", "Company Name": "Qatar Airways"},
-    {"ID": 4, "Type": "airline", "Company Name": "Spring Airlines"},
-    {"ID": 5, "Type": "airline", "Company Name": "China Eastern Airlines"},
-    {"ID": 6, "Type": "airline", "Company Name": "Emirates"},
-    {"ID": 7, "Type": "airline", "Company Name": "China Southern Airlines"},
-    {"ID": 8, "Type": "airline", "Company Name": "KLM Royal Dutch Airlines"},
-    {"ID": 9, "Type": "airline", "Company Name": "Aerolíneas Argentinas"},
-    {"ID": 10, "Type": "airline", "Company Name": "Aeroméxico"},
-    {"ID": 11, "Type": "airline", "Company Name": "Azerbaijan Airlines"},
-    {"ID": 12, "Type": "airline", "Company Name": "British Airways"},
-    {"ID": 13, "Type": "airline", "Company Name": "Lufthansa"},
-    {"ID": 14, "Type": "airline", "Company Name": "Singapore Airlines"},
-    {"ID": 15, "Type": "airline", "Company Name": "Vietnam Airlines"},
-]
-
-
-# 15 sample flights that use my sample clients and airlines, to try
-# out the Flights tab before the team's load function is ready.
-SAMPLE_FLIGHTS = [
-    {"ID": 1, "Type": "flight", "Client_ID": 1, "Airline_ID": 13,
-     "Date": "2026-12-05 14:30", "Start City": "Frankfurt",
-     "End City": "London"},
-    {"ID": 2, "Type": "flight", "Client_ID": 1, "Airline_ID": 12,
-     "Date": "2026-12-12 09:15", "Start City": "London",
-     "End City": "Frankfurt"},
-    {"ID": 3, "Type": "flight", "Client_ID": 8, "Airline_ID": 11,
-     "Date": "2026-11-20 07:45", "Start City": "Baku",
-     "End City": "Istanbul"},
-    {"ID": 4, "Type": "flight", "Client_ID": 12, "Airline_ID": 15,
-     "Date": "2026-11-28 23:10", "Start City": "Hanoi",
-     "End City": "Ho Chi Minh City"},
-    {"ID": 5, "Type": "flight", "Client_ID": 10, "Airline_ID": 9,
-     "Date": "2027-01-08 06:00", "Start City": "Mexico City",
-     "End City": "Buenos Aires"},
-    {"ID": 6, "Type": "flight", "Client_ID": 6, "Airline_ID": 6,
-     "Date": "2026-12-18 22:05", "Start City": "Tokyo",
-     "End City": "Dubai"},
-    {"ID": 7, "Type": "flight", "Client_ID": 9, "Airline_ID": 5,
-     "Date": "2026-10-30 08:20", "Start City": "Shanghai",
-     "End City": "Singapore"},
-    {"ID": 8, "Type": "flight", "Client_ID": 13, "Airline_ID": 14,
-     "Date": "2026-12-01 13:40", "Start City": "Singapore",
-     "End City": "Tokyo"},
-    {"ID": 9, "Type": "flight", "Client_ID": 14, "Airline_ID": 1,
-     "Date": "2026-11-15 18:25", "Start City": "Moscow",
-     "End City": "Saint Petersburg"},
-    {"ID": 10, "Type": "flight", "Client_ID": 15, "Airline_ID": 2,
-     "Date": "2026-12-22 11:00", "Start City": "Saint Petersburg",
-     "End City": "Istanbul"},
-    {"ID": 11, "Type": "flight", "Client_ID": 11, "Airline_ID": 8,
-     "Date": "2027-02-14 10:30", "Start City": "Amsterdam",
-     "End City": "Mexico City"},
-    {"ID": 12, "Type": "flight", "Client_ID": 5, "Airline_ID": 3,
-     "Date": "2026-10-25 16:50", "Start City": "Rome",
-     "End City": "Doha"},
-    {"ID": 13, "Type": "flight", "Client_ID": 4, "Airline_ID": 10,
-     "Date": "2027-03-03 07:15", "Start City": "Columbus",
-     "End City": "Mexico City"},
-    {"ID": 14, "Type": "flight", "Client_ID": 7, "Airline_ID": 12,
-     "Date": "2026-11-12 19:30", "Start City": "London",
-     "End City": "Rome"},
-    {"ID": 15, "Type": "flight", "Client_ID": 2, "Airline_ID": 4,
-     "Date": "2027-01-20 12:00", "Start City": "Warsaw",
-     "End City": "Shanghai"},
-]
-
 
 def show_message(message_label, text, kind="info"):
     """Show a message: ✓ success in green, ✗ error in red, ⚠ warning."""
@@ -457,6 +305,11 @@ def choice_name(choice):
     return choice.split(" – ", 1)[-1]
 
 
+def choice_id(choice):
+    """Give the ID part of an "ID – name" choice, as a number."""
+    return int(choice.split(" – ", 1)[0])
+
+
 def city_choices(clients, flights):
     """Make the city suggestions: every city already used, sorted A-Z."""
     cities = set()
@@ -682,18 +535,33 @@ def create_clients_tab(clients_tab, records, show_flights_for,
     def create_client():
         """Check the form, then add it as a new client."""
         if check_form():
-            # To connect: create_record(records, new_client) from records.py
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            details = read_entries(client_entries)
+            del details["ID"]        # create_record() gives the new ID
+            try:
+                client = create_record(records, "client", details)
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, client["Name"] + " was added "
+                         "with ID " + str(client["ID"]) + ".", "success")
 
     def update_client():
         """Check the form, then save the changes to the chosen client."""
         if check_form():
-            # To connect: update_record(records, "client", ID, new_values)
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            client_id = int(client_entries["ID"].get())
+            try:
+                client = update_record(records, "client", client_id,
+                                       read_entries(client_entries))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            run_search()
+            show_message(message_label, client["Name"] +
+                         " was updated.", "success")
 
     def delete_client():
         """Ask first, then delete the chosen client."""
@@ -703,10 +571,15 @@ def create_clients_tab(clients_tab, records, show_flights_for,
         values = client_list.item(selected[0], "values")
         name = values[1]
         if confirm_delete(clients_tab, name):
-            # To connect: delete_record(records, "client", ID) from records.py
-            show_message(message_label, "Delete confirmed. Deleting will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                delete_record(records, "client", int(selected[0]))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, name + " was deleted.", "success")
         else:
             show_message(message_label, name + " was not deleted.")
 
@@ -953,18 +826,33 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
     def create_airline():
         """Check the form, then add it as a new airline."""
         if check_form():
-            # To connect: create_record(records, new_airline) from records.py
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            details = read_entries(airline_entries)
+            del details["ID"]        # create_record() gives the new ID
+            try:
+                airline = create_record(records, "airline", details)
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, airline["Company Name"] + " was added "
+                         "with ID " + str(airline["ID"]) + ".", "success")
 
     def update_airline():
         """Check the form, then save the changes to the chosen airline."""
         if check_form():
-            # To connect: update_record(records, "airline", ID, new_values)
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            airline_id = int(airline_entries["ID"].get())
+            try:
+                airline = update_record(records, "airline", airline_id,
+                                       read_entries(airline_entries))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            run_search()
+            show_message(message_label, airline["Company Name"] +
+                         " was updated.", "success")
 
     def delete_airline():
         """Ask first, then delete the chosen airline."""
@@ -974,10 +862,15 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
         values = airline_list.item(selected[0], "values")
         name = values[1]
         if confirm_delete(airlines_tab, name):
-            # To connect: delete_record(records, "airline", ID) from records.py
-            show_message(message_label, "Delete confirmed. Deleting will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                delete_record(records, "airline", int(selected[0]))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            run_search()
+            show_message(message_label, name + " was deleted.", "success")
         else:
             show_message(message_label, name + " was not deleted.")
 
@@ -1300,6 +1193,14 @@ def create_flights_tab(flights_tab, records):
                           minute_box.get())
         return values
 
+    def flight_details():
+        """Give the form with the field names that records.py uses."""
+        values = read_form()
+        return {"Client_ID": choice_id(values["Client"]),
+                "Airline_ID": choice_id(values["Airline"]),
+                "Date": values["Date"], "Start City": values["From"],
+                "End City": values["To"]}
+
     # The form as it was last filled or cleared, to spot unsaved changes
     saved_form = {}
 
@@ -1428,18 +1329,30 @@ def create_flights_tab(flights_tab, records):
     def create_flight():
         """Check the form, then add it as a new flight."""
         if check_form():
-            # To connect: create_record(records, new_flight) from records.py
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                flight = create_record(records, "flight", flight_details())
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            refresh_lists()
+            show_message(message_label, "Flight " + str(flight["ID"]) +
+                         " was added.", "success")
 
     def update_flight():
         """Check the form, then save the changes to the chosen flight."""
         if check_form():
-            # To connect: update_record(records, "flight", ID, new_values)
-            show_message(message_label, "The details are valid. Saving will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                update_record(records, "flight", int(id_entry.get()),
+                              flight_details())
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            refresh_lists()
+            show_message(message_label, "Flight " + id_entry.get() +
+                         " was updated.", "success")
 
     def delete_flight():
         """Ask first, then delete the chosen flight."""
@@ -1450,10 +1363,16 @@ def create_flights_tab(flights_tab, records):
         name = ("flight " + str(values[0]) + " (" + values[2] + ", " +
                 values[4] + " → " + values[5] + ")")
         if confirm_delete(flights_tab, name):
-            # To connect: delete_record(records, "flight", ID) from records.py
-            show_message(message_label, "Delete confirmed. Deleting will "
-                         "work once the record functions are connected.",
-                         "success")
+            try:
+                delete_record(records, "flight", int(selected[0]))
+            except ValueError as problem:
+                show_message(message_label, str(problem), "error")
+                return
+            remember_form()
+            clear_form()
+            refresh_lists()
+            show_message(message_label, "Flight " + str(values[0]) +
+                         " was deleted.", "success")
         else:
             show_message(message_label, name + " was not deleted.")
 
@@ -1550,9 +1469,14 @@ def create_main_window():
               foreground=selected_text +
               style.map("Treeview", "foreground"))
 
-    # All records in one list of dictionaries, as the brief asks.
-    # For now the sample data; later: records = load_records(DATA_FILE)
-    records = SAMPLE_CLIENTS + SAMPLE_AIRLINES + SAMPLE_FLIGHTS
+    # All records in one list of dictionaries, as the brief asks,
+    # read from record.jsonl (an empty list if the file is missing)
+    try:
+        records = load_records(DATA_FILE)
+    except ValueError as problem:
+        messagebox.showerror("Records not loaded", str(problem),
+                             parent=main_window)
+        raise SystemExit
 
     # Make the tabs bigger when the window is resized
     tab_bar = ttk.Notebook(main_window)
@@ -1611,7 +1535,12 @@ def create_main_window():
                                    flights_unsaved()) if name]
         if names and not confirm_discard(main_window, " and ".join(names)):
             return
-        # To connect: save_records(records, DATA_FILE) from storage.py
+        try:
+            save_records(records, DATA_FILE)
+        except ValueError as problem:
+            messagebox.showerror("Records not saved", str(problem),
+                                 parent=main_window)
+            return
         main_window.destroy()
 
     # Run close_app when the agent closes the window
