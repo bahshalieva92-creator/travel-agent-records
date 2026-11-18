@@ -166,6 +166,7 @@ class TestGuiTabs(unittest.TestCase):
         tab = self.new_client()
         self.assertIn("16", self.rows(tab))
         self.assertIn("Test Client was added with ID 16.", self.message(tab))
+        self.assertEqual(self.record_list(tab).selection(), ("16",))
 
         self.choose(tab, 16)
         self.fill(tab, {"City": "Leeds"})
@@ -183,6 +184,7 @@ class TestGuiTabs(unittest.TestCase):
         self.fill(tab, {"Company Name": "Test Air"})
         self.click(tab, "Create")
         self.assertIn("16", self.rows(tab))
+        self.assertEqual(self.record_list(tab).selection(), ("16",))
 
         self.choose(tab, 16)
         self.fill(tab, {"Company Name": "Test Airways"})
@@ -208,6 +210,7 @@ class TestGuiTabs(unittest.TestCase):
         self.click(tab, "Create")
         self.assertIn("16", self.rows(tab))
         self.assertIn("Flight 16 was added: ", self.message(tab))
+        self.assertEqual(self.record_list(tab).selection(), ("16",))
         self.assertIn("London → Paris", self.message(tab))
 
         self.choose(tab, 16)

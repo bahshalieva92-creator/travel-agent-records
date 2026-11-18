@@ -134,6 +134,16 @@ def linked_flights_message(name, count, kind):
             " first.")
 
 
+def show_new_row(record_list, record_id, message_label, text):
+    """Select a newly added row, scroll to it and confirm it was added."""
+    row = str(record_id)
+    record_list.selection_set(row)
+    record_list.see(row)
+    # Selecting fills the form and its message first, so the confirmation
+    # is shown once that is done
+    record_list.after_idle(show_message, message_label, text, "success")
+
+
 def reselect_row(record_list, record_id):
     """Select the row of the record in the form again, or no row at all."""
     if record_id and record_list.exists(record_id):
@@ -556,10 +566,11 @@ def create_clients_tab(clients_tab, records, show_flights_for,
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
-            clear_form()
+            search_field.delete(0, "end")   # list every client
             run_search()
-            show_message(message_label, client["Name"] + " was added "
-                         "with ID " + str(client["ID"]) + ".", "success")
+            show_new_row(client_list, client["ID"], message_label,
+                         client["Name"] + " was added with ID " +
+                         str(client["ID"]) + ".")
 
     def update_client():
         """Check the form, then save the changes to the chosen client."""
@@ -860,10 +871,11 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
-            clear_form()
+            search_field.delete(0, "end")   # list every airline
             run_search()
-            show_message(message_label, airline["Company Name"] + " was added "
-                         "with ID " + str(airline["ID"]) + ".", "success")
+            show_new_row(airline_list, airline["ID"], message_label,
+                         airline["Company Name"] + " was added with ID " +
+                         str(airline["ID"]) + ".")
 
     def update_airline():
         """Check the form, then save the changes to the chosen airline."""
@@ -1404,11 +1416,11 @@ def create_flights_tab(flights_tab, records):
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
-            clear_form()
+            search_field.delete(0, "end")   # list every flight
             refresh_lists()
-            show_message(message_label, "Flight " + str(flight["ID"]) +
-                         " was added: " + flight_summary(flight) + ".",
-                         "success")
+            show_new_row(flight_list, flight["ID"], message_label,
+                         "Flight " + str(flight["ID"]) + " was added: " +
+                         flight_summary(flight) + ".")
 
     def update_flight():
         """Check the form, then save the changes to the chosen flight."""
