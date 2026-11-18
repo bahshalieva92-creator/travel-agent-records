@@ -1120,8 +1120,9 @@ def create_flights_tab(flights_tab, records):
 
     client_box.bind("<<ComboboxSelected>>", client_chosen)
 
-    # When: arrow boxes for the date in the same order as the list (year,
-    # month, day), so the agent cannot type an impossible date like month 13
+    # When: boxes for the date in the same order as the list (year, month,
+    # day). The agent can type a number or use the arrows; check_form()
+    # catches an impossible date like 31 February
     today = date.today()
 
     date_label = ttk.Label(flight_form, text="Date*")
@@ -1130,33 +1131,33 @@ def create_flights_tab(flights_tab, records):
     date_boxes.grid(row=3, column=1, padx=5, pady=3, sticky="w")
 
     year_box = ttk.Spinbox(date_boxes, from_=today.year, to=today.year + 4,
-                           width=5, state="readonly")
+                           width=5)
     year_box.pack(side="left")
     year_dash = ttk.Label(date_boxes, text="-")
     year_dash.pack(side="left")
     month_box = ttk.Spinbox(date_boxes, from_=1, to=12, width=3,
-                            format="%02.0f", wrap=True, state="readonly")
+                            format="%02.0f", wrap=True)
     month_box.pack(side="left")
     month_dash = ttk.Label(date_boxes, text="-")
     month_dash.pack(side="left")
     day_box = ttk.Spinbox(date_boxes, from_=1, to=31, width=3,
-                          format="%02.0f", wrap=True, state="readonly")
+                          format="%02.0f", wrap=True)
     day_box.pack(side="left")
 
-    # Arrow boxes for the time on the 24-hour clock, minutes in steps of 5
+    # Boxes for the time on the 24-hour clock; the arrows move the minutes
+    # in steps of 5, and any minute can be typed
     time_label = ttk.Label(flight_form, text="Time*")
     time_label.grid(row=3, column=2, padx=5, pady=3, sticky="w")
     time_boxes = ttk.Frame(flight_form)
     time_boxes.grid(row=3, column=3, padx=5, pady=3, sticky="w")
 
     hour_box = ttk.Spinbox(time_boxes, from_=0, to=23, width=3,
-                           format="%02.0f", wrap=True, state="readonly")
+                           format="%02.0f", wrap=True)
     hour_box.pack(side="left")
     time_colon = ttk.Label(time_boxes, text=":")
     time_colon.pack(side="left")
     minute_box = ttk.Spinbox(time_boxes, from_=0, to=55, increment=5,
-                             width=3, format="%02.0f", wrap=True,
-                             state="readonly")
+                             width=3, format="%02.0f", wrap=True)
     minute_box.pack(side="left")
     time_hint = ttk.Label(time_boxes, text="(24-hour)")
     time_hint.pack(side="left", padx=5)
@@ -1222,12 +1223,22 @@ def create_flights_tab(flights_tab, records):
 
     flights_tab.bind("<Map>", tab_opened)
 
+    def date_text():
+        """Give the date and time boxes as "YYYY-MM-DD HH:MM", padded."""
+        parts = []
+        for box, width in ((year_box, 4), (month_box, 2), (day_box, 2),
+                           (hour_box, 2), (minute_box, 2)):
+            part = box.get().strip()
+            if part.isdigit():
+                part = str(int(part)).zfill(width)   # typed "3" becomes "03"
+            parts.append(part)
+        return (parts[0] + "-" + parts[1] + "-" + parts[2] + " " +
+                parts[3] + ":" + parts[4])
+
     def read_form():
         """Read the flight form, with the date and time as one value."""
         values = read_entries(flight_boxes)
-        values["Date"] = (year_box.get() + "-" + month_box.get() + "-" +
-                          day_box.get() + " " + hour_box.get() + ":" +
-                          minute_box.get())
+        values["Date"] = date_text()
         return values
 
     def flight_details():
@@ -1351,14 +1362,24 @@ def create_flights_tab(flights_tab, records):
                          "cities.", "error")
             to_box.focus_set()
             return False
-        year = int(year_box.get())
-        month = int(month_box.get())
-        day = int(day_box.get())
-        flight_time = real_date(year, month, day, int(hour_box.get()),
-                                int(minute_box.get()))
+        parts = [box.get().strip() for box in (year_box, month_box, day_box,
+                                               hour_box, minute_box)]
+        if not all(part.isdigit() for part in parts):
+            show_message(message_label, "The date and time can only have "
+                         "numbers, for example 2027-03-15 10:30.", "error")
+            day_box.focus_set()
+            return False
+        year, month, day, hour, minute = [int(part) for part in parts]
+        flight_time = real_date(year, month, day, hour, minute)
         if flight_time is None:
-            show_message(message_label, date_in_words(year, month, day) +
-                         " is not a real date.", "error")
+            if (1 <= year <= 9999 and 1 <= month <= 12 and 1 <= day <= 31
+                    and hour <= 23 and minute <= 59):
+                problem = (date_in_words(year, month, day) +
+                           " is not a real date.")
+            else:
+                problem = ("Check the date and time: month 1-12, day 1-31, "
+                           "hour 0-23 and minutes 0-59.")
+            show_message(message_label, problem, "error")
             day_box.focus_set()
             return False
         if flight_time < datetime.now():

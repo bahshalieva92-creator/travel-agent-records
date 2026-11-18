@@ -219,6 +219,29 @@ class TestGuiTabs(unittest.TestCase):
         self.click(tab, "Delete")
         self.assertNotIn("16", self.rows(tab))
 
+    def test_flight_date_and_time_can_be_typed(self):
+        tab = self.open_tab("Flights")
+        self.click(tab, "Clear")
+        boxes, spins = self.flight_boxes()
+        client_box, from_box, to_box, airline_box = boxes[:4]
+        client_box.set(client_box.cget("values")[0])
+        airline_box.set(airline_box.cget("values")[0])
+        from_box.set("Madrid")
+        to_box.set("Paris")
+
+        # A month that does not exist is refused with a message
+        for box, value in zip(spins, ["2027", "13", "15", "9", "7"]):
+            box.set(value)
+        self.click(tab, "Create")
+        self.assertEqual(len(self.rows(tab)), 15)
+        self.assertIn("Check the date and time", self.message(tab))
+
+        # Typed numbers are saved in the usual format
+        spins[1].set("3")
+        self.click(tab, "Create")
+        self.assertIn("2027-03-15 09:07",
+                      self.record_list(tab).item("16", "values"))
+
     def test_missing_required_field_adds_nothing(self):
         tab = self.open_tab("Clients")
         self.click(tab, "Clear")
