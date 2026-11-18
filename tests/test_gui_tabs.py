@@ -262,6 +262,21 @@ class TestGuiTabs(unittest.TestCase):
         self.click(tab, "Show all")
         self.assertEqual(len(self.rows(tab)), 15)
 
+    def test_search_that_hides_the_record_clears_the_form(self):
+        for name, text in (("Clients", "Kenji"), ("Airlines", "Emirates"),
+                           ("Flights", "Hanoi")):
+            with self.subTest(tab=name):
+                tab = self.open_tab(name)
+                self.choose(tab, 1)
+                search_field = next(widget for widget in all_widgets(tab)
+                                    if type(widget) is ttk.Entry)
+                search_field.delete(0, "end")
+                search_field.insert(0, text)
+                self.click(tab, "Search")
+                self.assertNotIn("1", self.rows(tab))
+                self.assertTrue(self.is_greyed_out(tab, "Update"))
+                self.assertTrue(self.is_greyed_out(tab, "Delete"))
+
     def test_new_client_appears_in_flights_dropdown(self):
         self.open_tab("Flights")
         self.assertFalse(any("Test Client" in choice

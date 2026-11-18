@@ -639,6 +639,11 @@ def create_clients_tab(clients_tab, records, show_flights_for,
         show_clients(client_list, records_of_type(records, "client"))
         keep_matching_rows(client_list, text)
         update_count()
+        # A client hidden by the search leaves the form, so it cannot be
+        # updated or deleted by mistake (unsaved changes are kept)
+        form_id = client_entries["ID"].get()
+        if form_id and not client_list.exists(form_id) and not unsaved_name():
+            clear_form()
         reselect_row(client_list, client_entries["ID"].get())
         show_search_result(message_label, client_list, "clients", text)
 
@@ -925,6 +930,11 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
         show_airlines(airline_list, records_of_type(records, "airline"))
         keep_matching_rows(airline_list, text)
         update_count()
+        # An airline hidden by the search leaves the form, so it cannot be
+        # updated or deleted by mistake (unsaved changes are kept)
+        form_id = airline_entries["ID"].get()
+        if form_id and not airline_list.exists(form_id) and not unsaved_name():
+            clear_form()
         reselect_row(airline_list, airline_entries["ID"].get())
         show_search_result(message_label, airline_list, "airlines", text)
 
@@ -1412,6 +1422,11 @@ def create_flights_tab(flights_tab, records):
     def run_search(event=None):
         """Show only the flights with the search text in any column."""
         refresh_lists()
+        # A flight hidden by the search leaves the form, so it cannot be
+        # updated or deleted by mistake (unsaved changes are kept)
+        form_id = id_entry.get()
+        if form_id and not flight_list.exists(form_id) and not unsaved_name():
+            clear_form()
         show_search_result(message_label, flight_list, "flights",
                            search_field.get().strip())
 
