@@ -13,9 +13,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from gui.app import (choice_name, city_choices, date_in_words, find_choice,
-                     first_missing_field, make_choices, phone_is_valid,
-                     plain_text, read_entries, real_date, records_of_type,
-                     sort_value, text_found)
+                     first_missing_field, linked_flights_message,
+                     make_choices, phone_is_valid, plain_text, read_entries,
+                     real_date, records_of_type, sort_value, text_found)
 
 # A few records of each type, used by the list and drop-down tests
 TEST_RECORDS = [
@@ -207,3 +207,18 @@ class TestSorting(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestLinkedFlightsMessage(unittest.TestCase):
+    """The message when a client or airline with flights is deleted."""
+
+    def test_one_flight(self):
+        self.assertEqual(
+            linked_flights_message("Lufthansa", 1, "airline"),
+            "Lufthansa has 1 flight, so this airline cannot be deleted. "
+            "Use Show flights to change or delete it first.")
+
+    def test_several_flights(self):
+        message = linked_flights_message("Anna Schmidt", 2, "client")
+        self.assertIn("has 2 flights, so this client", message)
+        self.assertIn("delete them first.", message)

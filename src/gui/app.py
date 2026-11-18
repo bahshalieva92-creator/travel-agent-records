@@ -123,6 +123,17 @@ def confirm_discard(parent, name):
                                icon="warning", default="no", parent=parent)
 
 
+def linked_flights_message(name, count, kind):
+    """Say why a client or airline with flights cannot be deleted."""
+    if count == 1:
+        flights, them = "1 flight", "it"
+    else:
+        flights, them = str(count) + " flights", "them"
+    return (name + " has " + flights + ", so this " + kind + " cannot be "
+            "deleted. Use Show flights to change or delete " + them +
+            " first.")
+
+
 def reselect_row(record_list, record_id):
     """Select the row of the record in the form again, or no row at all."""
     if record_id and record_list.exists(record_id):
@@ -572,6 +583,12 @@ def create_clients_tab(clients_tab, records, show_flights_for,
             return
         values = client_list.item(selected[0], "values")
         name = values[1]
+        linked = [flight for flight in records_of_type(records, "flight")
+                  if flight["Client_ID"] == int(selected[0])]
+        if linked:
+            show_message(message_label, linked_flights_message(
+                name, len(linked), "client"), "error")
+            return
         if confirm_delete(clients_tab, name):
             try:
                 delete_record(records, "client", int(selected[0]))
@@ -870,6 +887,12 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
             return
         values = airline_list.item(selected[0], "values")
         name = values[1]
+        linked = [flight for flight in records_of_type(records, "flight")
+                  if flight["Airline_ID"] == int(selected[0])]
+        if linked:
+            show_message(message_label, linked_flights_message(
+                name, len(linked), "airline"), "error")
+            return
         if confirm_delete(airlines_tab, name):
             try:
                 delete_record(records, "airline", int(selected[0]))
@@ -1342,6 +1365,15 @@ def create_flights_tab(flights_tab, records):
             return past_date_confirmed(flight_time)
         return True
 
+    def flight_summary(flight):
+        """Describe a flight in words, e.g. "Sara Lopez, Madrid → Paris"."""
+        client_name = "Client " + str(flight["Client_ID"])
+        for client in records_of_type(records, "client"):
+            if client["ID"] == flight["Client_ID"]:
+                client_name = client["Name"]
+        return (client_name + ", " + flight["Start City"] + " → " +
+                flight["End City"])
+
     def create_flight():
         """Check the form, then add it as a new flight."""
         if check_form():
@@ -1354,21 +1386,23 @@ def create_flights_tab(flights_tab, records):
             clear_form()
             refresh_lists()
             show_message(message_label, "Flight " + str(flight["ID"]) +
-                         " was added.", "success")
+                         " was added: " + flight_summary(flight) + ".",
+                         "success")
 
     def update_flight():
         """Check the form, then save the changes to the chosen flight."""
         if check_form():
             try:
-                update_record(records, "flight", int(id_entry.get()),
-                              flight_details())
+                flight = update_record(records, "flight",
+                                       int(id_entry.get()), flight_details())
             except ValueError as problem:
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
             refresh_lists()
-            show_message(message_label, "Flight " + id_entry.get() +
-                         " was updated.", "success")
+            show_message(message_label, "Flight " + str(flight["ID"]) +
+                         " was updated: " + flight_summary(flight) + ".",
+                         "success")
 
     def delete_flight():
         """Ask first, then delete the chosen flight."""

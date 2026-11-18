@@ -207,7 +207,8 @@ class TestGuiTabs(unittest.TestCase):
             box.set(value)
         self.click(tab, "Create")
         self.assertIn("16", self.rows(tab))
-        self.assertIn("Flight 16 was added.", self.message(tab))
+        self.assertIn("Flight 16 was added: ", self.message(tab))
+        self.assertIn("London → Paris", self.message(tab))
 
         self.choose(tab, 16)
         to_box.set("Rome")
@@ -250,6 +251,7 @@ class TestGuiTabs(unittest.TestCase):
         self.click(tab, "Delete")
         self.assertIn("1", self.rows(tab))
         self.assertIn("cannot be deleted", self.message(tab))
+        self.assertIn("Use Show flights", self.message(tab))
 
     def test_search_shows_only_matching_rows(self):
         tab = self.open_tab("Airlines")
