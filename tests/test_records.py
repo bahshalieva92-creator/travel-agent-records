@@ -17,6 +17,7 @@ from record.records import (
     update_record,
     validate_date,
     validate_flight_relationships,
+    validate_not_duplicate,
     validate_required_fields,
 )
 
@@ -705,3 +706,92 @@ class TestLinkedFlightDeletionProtection(unittest.TestCase):
                 for record in self.records
             )
         )
+
+
+class TestDuplicateRecords(unittest.TestCase):
+
+    def setUp(self):
+        self.client = {
+            "Name": "Anna Schmidt",
+            "Address Line 1": "1 Example Street",
+            "City": "Liverpool",
+            "Country": "UK",
+            "Phone Number": "01234567890",
+        }
+        self.flight = {
+            "Client_ID": 1,
+            "Airline_ID": 1,
+            "Date": "2026-12-05 14:30",
+            "Start City": "Frankfurt",
+            "End City": "London",
+        }
+        self.records = [
+            {"ID": 1, "Type": "client", **self.client},
+            {"ID": 1, "Type": "airline", "Company Name": "Lufthansa"},
+            {"ID": 1, "Type": "flight", **self.flight},
+        ]
+
+    def test_same_client_is_not_added(self):
+        with self.assertRaises(ValueError):
+            create_record(self.records, "client", dict(self.client))
+
+        self.assertEqual(len(self.records), 3)
+
+    def test_case_and_spaces_are_ignored(self):
+        fields = dict(self.client, Name="  anna   SCHMIDT ")
+
+        with self.assertRaises(ValueError):
+            create_record(self.records, "client", fields)
+
+    def test_same_name_with_other_phone_is_added(self):
+        fields = dict(self.client, **{"Phone Number": "09876543210"})
+
+        new_record = create_record(self.records, "client", fields)
+
+        self.assertEqual(new_record["ID"], 2)
+
+    def test_same_airline_is_not_added(self):
+        with self.assertRaises(ValueError):
+            create_record(
+                self.records,
+                "airline",
+                {"Company Name": "lufthansa"},
+            )
+
+    def test_same_flight_is_not_added(self):
+        with self.assertRaises(ValueError):
+            create_record(self.records, "flight", dict(self.flight))
+
+        self.assertEqual(len(self.records), 3)
+
+    def test_flight_on_another_date_is_added(self):
+        fields = dict(self.flight, Date="2026-12-06 14:30")
+
+        new_record = create_record(self.records, "flight", fields)
+
+        self.assertEqual(new_record["ID"], 2)
+
+    def test_update_without_changes_is_allowed(self):
+        update_record(self.records, "client", 1, {"City": "Leeds"})
+
+        self.assertEqual(self.records[0]["City"], "Leeds")
+
+    def test_update_into_another_client_is_rejected(self):
+        create_record(
+            self.records,
+            "client",
+            dict(self.client, Name="Ben Jones"),
+        )
+
+        with self.assertRaises(ValueError):
+            update_record(
+                self.records,
+                "client",
+                2,
+                {"Name": "Anna Schmidt"},
+            )
+
+        self.assertEqual(self.records[-1]["Name"], "Ben Jones")
+
+    def test_record_is_not_compared_with_itself(self):
+        validate_not_duplicate(self.records, "flight", self.flight, 1)

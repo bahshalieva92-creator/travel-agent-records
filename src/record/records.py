@@ -88,6 +88,43 @@ def validate_flight_relationships(
         )
 
 
+# The details that make two records of one type the same record
+DUPLICATE_FIELDS = {
+    "client": ("Name", "Phone Number"),
+    "airline": ("Company Name",),
+    "flight": ("Client_ID", "Airline_ID", "Date", "Start City", "End City"),
+}
+
+
+def validate_not_duplicate(
+    records: list[dict],
+    record_type: str,
+    fields: dict,
+    record_id: int | None = None,
+) -> None:
+    """Check that no other record of this type has the same details."""
+    key_fields = DUPLICATE_FIELDS[record_type]
+
+    def key(record: dict) -> list:
+        # Ignore letter case and extra spaces in text
+        return [
+            " ".join(value.lower().split()) if isinstance(value, str)
+            else value
+            for value in (record.get(name) for name in key_fields)
+        ]
+
+    for record in records:
+        if (
+            record.get("Type") == record_type
+            and record.get("ID") != record_id
+            and key(record) == key(fields)
+        ):
+            raise ValueError(
+                f"{record_type.capitalize()} ID {record['ID']} already has "
+                f"the same {' and '.join(key_fields)}."
+            )
+
+
 def create_record(
     records: list[dict],
     record_type: str,
@@ -102,6 +139,8 @@ def create_record(
     if record_type == "flight":
         validate_date(fields["Date"])
         validate_flight_relationships(records, fields)
+
+    validate_not_duplicate(records, record_type, fields)
 
     new_record = {
         "ID": get_next_id(records, record_type),
@@ -177,6 +216,8 @@ def update_record(
     if record_type == "flight":
         validate_date(updated_record["Date"])
         validate_flight_relationships(records, updated_record)
+
+    validate_not_duplicate(records, record_type, updated_record, record_id)
 
     target_record.clear()
     target_record.update(updated_record)
