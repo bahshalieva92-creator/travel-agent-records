@@ -123,6 +123,27 @@ def confirm_discard(parent, name):
                                icon="warning", default="no", parent=parent)
 
 
+def linked_flights_message(name, count, kind):
+    """Say why a client or airline with flights cannot be deleted."""
+    if count == 1:
+        flights, them = "1 flight", "it"
+    else:
+        flights, them = str(count) + " flights", "them"
+    return (name + " has " + flights + ", so this " + kind + " cannot be "
+            "deleted. Use Show flights to change or delete " + them +
+            " first.")
+
+
+def show_new_row(record_list, record_id, message_label, text):
+    """Select a newly added row, scroll to it and confirm it was added."""
+    row = str(record_id)
+    record_list.selection_set(row)
+    record_list.see(row)
+    # Selecting fills the form and its message first, so the confirmation
+    # is shown once that is done
+    record_list.after_idle(show_message, message_label, text, "success")
+
+
 def reselect_row(record_list, record_id):
     """Select the row of the record in the form again, or no row at all."""
     if record_id and record_list.exists(record_id):
@@ -545,10 +566,11 @@ def create_clients_tab(clients_tab, records, show_flights_for,
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
-            clear_form()
+            search_field.delete(0, "end")   # list every client
             run_search()
-            show_message(message_label, client["Name"] + " was added "
-                         "with ID " + str(client["ID"]) + ".", "success")
+            show_new_row(client_list, client["ID"], message_label,
+                         client["Name"] + " was added with ID " +
+                         str(client["ID"]) + ".")
 
     def update_client():
         """Check the form, then save the changes to the chosen client."""
@@ -572,6 +594,12 @@ def create_clients_tab(clients_tab, records, show_flights_for,
             return
         values = client_list.item(selected[0], "values")
         name = values[1]
+        linked = [flight for flight in records_of_type(records, "flight")
+                  if flight["Client_ID"] == int(selected[0])]
+        if linked:
+            show_message(message_label, linked_flights_message(
+                name, len(linked), "client"), "error")
+            return
         if confirm_delete(clients_tab, name):
             try:
                 delete_record(records, "client", int(selected[0]))
@@ -639,6 +667,11 @@ def create_clients_tab(clients_tab, records, show_flights_for,
         show_clients(client_list, records_of_type(records, "client"))
         keep_matching_rows(client_list, text)
         update_count()
+        # A client hidden by the search leaves the form, so it cannot be
+        # updated or deleted by mistake (unsaved changes are kept)
+        form_id = client_entries["ID"].get()
+        if form_id and not client_list.exists(form_id) and not unsaved_name():
+            clear_form()
         reselect_row(client_list, client_entries["ID"].get())
         show_search_result(message_label, client_list, "clients", text)
 
@@ -838,10 +871,11 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
-            clear_form()
+            search_field.delete(0, "end")   # list every airline
             run_search()
-            show_message(message_label, airline["Company Name"] + " was added "
-                         "with ID " + str(airline["ID"]) + ".", "success")
+            show_new_row(airline_list, airline["ID"], message_label,
+                         airline["Company Name"] + " was added with ID " +
+                         str(airline["ID"]) + ".")
 
     def update_airline():
         """Check the form, then save the changes to the chosen airline."""
@@ -865,6 +899,12 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
             return
         values = airline_list.item(selected[0], "values")
         name = values[1]
+        linked = [flight for flight in records_of_type(records, "flight")
+                  if flight["Airline_ID"] == int(selected[0])]
+        if linked:
+            show_message(message_label, linked_flights_message(
+                name, len(linked), "airline"), "error")
+            return
         if confirm_delete(airlines_tab, name):
             try:
                 delete_record(records, "airline", int(selected[0]))
@@ -925,6 +965,11 @@ def create_airlines_tab(airlines_tab, records, show_flights_for):
         show_airlines(airline_list, records_of_type(records, "airline"))
         keep_matching_rows(airline_list, text)
         update_count()
+        # An airline hidden by the search leaves the form, so it cannot be
+        # updated or deleted by mistake (unsaved changes are kept)
+        form_id = airline_entries["ID"].get()
+        if form_id and not airline_list.exists(form_id) and not unsaved_name():
+            clear_form()
         reselect_row(airline_list, airline_entries["ID"].get())
         show_search_result(message_label, airline_list, "airlines", text)
 
@@ -1087,8 +1132,9 @@ def create_flights_tab(flights_tab, records):
 
     client_box.bind("<<ComboboxSelected>>", client_chosen)
 
-    # When: arrow boxes for the date in the same order as the list (year,
-    # month, day), so the agent cannot type an impossible date like month 13
+    # When: boxes for the date in the same order as the list (year, month,
+    # day). The agent can type a number or use the arrows; check_form()
+    # catches an impossible date like 31 February
     today = date.today()
 
     date_label = ttk.Label(flight_form, text="Date*")
@@ -1097,33 +1143,33 @@ def create_flights_tab(flights_tab, records):
     date_boxes.grid(row=3, column=1, padx=5, pady=3, sticky="w")
 
     year_box = ttk.Spinbox(date_boxes, from_=today.year, to=today.year + 4,
-                           width=5, state="readonly")
+                           width=5)
     year_box.pack(side="left")
     year_dash = ttk.Label(date_boxes, text="-")
     year_dash.pack(side="left")
     month_box = ttk.Spinbox(date_boxes, from_=1, to=12, width=3,
-                            format="%02.0f", wrap=True, state="readonly")
+                            format="%02.0f", wrap=True)
     month_box.pack(side="left")
     month_dash = ttk.Label(date_boxes, text="-")
     month_dash.pack(side="left")
     day_box = ttk.Spinbox(date_boxes, from_=1, to=31, width=3,
-                          format="%02.0f", wrap=True, state="readonly")
+                          format="%02.0f", wrap=True)
     day_box.pack(side="left")
 
-    # Arrow boxes for the time on the 24-hour clock, minutes in steps of 5
+    # Boxes for the time on the 24-hour clock; the arrows move the minutes
+    # in steps of 5, and any minute can be typed
     time_label = ttk.Label(flight_form, text="Time*")
     time_label.grid(row=3, column=2, padx=5, pady=3, sticky="w")
     time_boxes = ttk.Frame(flight_form)
     time_boxes.grid(row=3, column=3, padx=5, pady=3, sticky="w")
 
     hour_box = ttk.Spinbox(time_boxes, from_=0, to=23, width=3,
-                           format="%02.0f", wrap=True, state="readonly")
+                           format="%02.0f", wrap=True)
     hour_box.pack(side="left")
     time_colon = ttk.Label(time_boxes, text=":")
     time_colon.pack(side="left")
     minute_box = ttk.Spinbox(time_boxes, from_=0, to=55, increment=5,
-                             width=3, format="%02.0f", wrap=True,
-                             state="readonly")
+                             width=3, format="%02.0f", wrap=True)
     minute_box.pack(side="left")
     time_hint = ttk.Label(time_boxes, text="(24-hour)")
     time_hint.pack(side="left", padx=5)
@@ -1189,12 +1235,22 @@ def create_flights_tab(flights_tab, records):
 
     flights_tab.bind("<Map>", tab_opened)
 
+    def date_text():
+        """Give the date and time boxes as "YYYY-MM-DD HH:MM", padded."""
+        parts = []
+        for box, width in ((year_box, 4), (month_box, 2), (day_box, 2),
+                           (hour_box, 2), (minute_box, 2)):
+            part = box.get().strip()
+            if part.isdigit():
+                part = str(int(part)).zfill(width)   # typed "3" becomes "03"
+            parts.append(part)
+        return (parts[0] + "-" + parts[1] + "-" + parts[2] + " " +
+                parts[3] + ":" + parts[4])
+
     def read_form():
         """Read the flight form, with the date and time as one value."""
         values = read_entries(flight_boxes)
-        values["Date"] = (year_box.get() + "-" + month_box.get() + "-" +
-                          day_box.get() + " " + hour_box.get() + ":" +
-                          minute_box.get())
+        values["Date"] = date_text()
         return values
 
     def flight_details():
@@ -1318,19 +1374,38 @@ def create_flights_tab(flights_tab, records):
                          "cities.", "error")
             to_box.focus_set()
             return False
-        year = int(year_box.get())
-        month = int(month_box.get())
-        day = int(day_box.get())
-        flight_time = real_date(year, month, day, int(hour_box.get()),
-                                int(minute_box.get()))
+        parts = [box.get().strip() for box in (year_box, month_box, day_box,
+                                               hour_box, minute_box)]
+        if not all(part.isdigit() for part in parts):
+            show_message(message_label, "The date and time can only have "
+                         "numbers, for example 2027-03-15 10:30.", "error")
+            day_box.focus_set()
+            return False
+        year, month, day, hour, minute = [int(part) for part in parts]
+        flight_time = real_date(year, month, day, hour, minute)
         if flight_time is None:
-            show_message(message_label, date_in_words(year, month, day) +
-                         " is not a real date.", "error")
+            if (1 <= year <= 9999 and 1 <= month <= 12 and 1 <= day <= 31
+                    and hour <= 23 and minute <= 59):
+                problem = (date_in_words(year, month, day) +
+                           " is not a real date.")
+            else:
+                problem = ("Check the date and time: month 1-12, day 1-31, "
+                           "hour 0-23 and minutes 0-59.")
+            show_message(message_label, problem, "error")
             day_box.focus_set()
             return False
         if flight_time < datetime.now():
             return past_date_confirmed(flight_time)
         return True
+
+    def flight_summary(flight):
+        """Describe a flight in words, e.g. "Sara Lopez, Madrid → Paris"."""
+        client_name = "Client " + str(flight["Client_ID"])
+        for client in records_of_type(records, "client"):
+            if client["ID"] == flight["Client_ID"]:
+                client_name = client["Name"]
+        return (client_name + ", " + flight["Start City"] + " → " +
+                flight["End City"])
 
     def create_flight():
         """Check the form, then add it as a new flight."""
@@ -1341,24 +1416,26 @@ def create_flights_tab(flights_tab, records):
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
-            clear_form()
+            search_field.delete(0, "end")   # list every flight
             refresh_lists()
-            show_message(message_label, "Flight " + str(flight["ID"]) +
-                         " was added.", "success")
+            show_new_row(flight_list, flight["ID"], message_label,
+                         "Flight " + str(flight["ID"]) + " was added: " +
+                         flight_summary(flight) + ".")
 
     def update_flight():
         """Check the form, then save the changes to the chosen flight."""
         if check_form():
             try:
-                update_record(records, "flight", int(id_entry.get()),
-                              flight_details())
+                flight = update_record(records, "flight",
+                                       int(id_entry.get()), flight_details())
             except ValueError as problem:
                 show_message(message_label, str(problem), "error")
                 return
             remember_form()
             refresh_lists()
-            show_message(message_label, "Flight " + id_entry.get() +
-                         " was updated.", "success")
+            show_message(message_label, "Flight " + str(flight["ID"]) +
+                         " was updated: " + flight_summary(flight) + ".",
+                         "success")
 
     def delete_flight():
         """Ask first, then delete the chosen flight."""
@@ -1412,6 +1489,11 @@ def create_flights_tab(flights_tab, records):
     def run_search(event=None):
         """Show only the flights with the search text in any column."""
         refresh_lists()
+        # A flight hidden by the search leaves the form, so it cannot be
+        # updated or deleted by mistake (unsaved changes are kept)
+        form_id = id_entry.get()
+        if form_id and not flight_list.exists(form_id) and not unsaved_name():
+            clear_form()
         show_search_result(message_label, flight_list, "flights",
                            search_field.get().strip())
 

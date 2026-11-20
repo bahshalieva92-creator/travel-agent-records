@@ -166,6 +166,7 @@ class TestGuiTabs(unittest.TestCase):
         tab = self.new_client()
         self.assertIn("16", self.rows(tab))
         self.assertIn("Test Client was added with ID 16.", self.message(tab))
+        self.assertEqual(self.record_list(tab).selection(), ("16",))
 
         self.choose(tab, 16)
         self.fill(tab, {"City": "Leeds"})
@@ -183,6 +184,7 @@ class TestGuiTabs(unittest.TestCase):
         self.fill(tab, {"Company Name": "Test Air"})
         self.click(tab, "Create")
         self.assertIn("16", self.rows(tab))
+        self.assertEqual(self.record_list(tab).selection(), ("16",))
 
         self.choose(tab, 16)
         self.fill(tab, {"Company Name": "Test Airways"})
@@ -207,7 +209,9 @@ class TestGuiTabs(unittest.TestCase):
             box.set(value)
         self.click(tab, "Create")
         self.assertIn("16", self.rows(tab))
-        self.assertIn("Flight 16 was added.", self.message(tab))
+        self.assertIn("Flight 16 was added: ", self.message(tab))
+        self.assertEqual(self.record_list(tab).selection(), ("16",))
+        self.assertIn("London → Paris", self.message(tab))
 
         self.choose(tab, 16)
         to_box.set("Rome")
@@ -217,6 +221,29 @@ class TestGuiTabs(unittest.TestCase):
         self.choose(tab, 16)
         self.click(tab, "Delete")
         self.assertNotIn("16", self.rows(tab))
+
+    def test_flight_date_and_time_can_be_typed(self):
+        tab = self.open_tab("Flights")
+        self.click(tab, "Clear")
+        boxes, spins = self.flight_boxes()
+        client_box, from_box, to_box, airline_box = boxes[:4]
+        client_box.set(client_box.cget("values")[0])
+        airline_box.set(airline_box.cget("values")[0])
+        from_box.set("Madrid")
+        to_box.set("Paris")
+
+        # A month that does not exist is refused with a message
+        for box, value in zip(spins, ["2027", "13", "15", "9", "7"]):
+            box.set(value)
+        self.click(tab, "Create")
+        self.assertEqual(len(self.rows(tab)), 15)
+        self.assertIn("Check the date and time", self.message(tab))
+
+        # Typed numbers are saved in the usual format
+        spins[1].set("3")
+        self.click(tab, "Create")
+        self.assertIn("2027-03-15 09:07",
+                      self.record_list(tab).item("16", "values"))
 
     def test_missing_required_field_adds_nothing(self):
         tab = self.open_tab("Clients")
@@ -250,6 +277,7 @@ class TestGuiTabs(unittest.TestCase):
         self.click(tab, "Delete")
         self.assertIn("1", self.rows(tab))
         self.assertIn("cannot be deleted", self.message(tab))
+        self.assertIn("Use Show flights", self.message(tab))
 
     def test_search_shows_only_matching_rows(self):
         tab = self.open_tab("Airlines")
@@ -261,6 +289,21 @@ class TestGuiTabs(unittest.TestCase):
 
         self.click(tab, "Show all")
         self.assertEqual(len(self.rows(tab)), 15)
+
+    def test_search_that_hides_the_record_clears_the_form(self):
+        for name, text in (("Clients", "Kenji"), ("Airlines", "Emirates"),
+                           ("Flights", "Hanoi")):
+            with self.subTest(tab=name):
+                tab = self.open_tab(name)
+                self.choose(tab, 1)
+                search_field = next(widget for widget in all_widgets(tab)
+                                    if type(widget) is ttk.Entry)
+                search_field.delete(0, "end")
+                search_field.insert(0, text)
+                self.click(tab, "Search")
+                self.assertNotIn("1", self.rows(tab))
+                self.assertTrue(self.is_greyed_out(tab, "Update"))
+                self.assertTrue(self.is_greyed_out(tab, "Delete"))
 
     def test_new_client_appears_in_flights_dropdown(self):
         self.open_tab("Flights")
