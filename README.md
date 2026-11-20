@@ -26,8 +26,16 @@ The Clients, Airlines and Flights tabs are functional, including record-manageme
 ## Requirements
 
 - Python 3.14
+<<<<<<< HEAD
 - Tkinter (included with Python)
 - Required Python dependencies, including JSON Lines support
+=======
+- GitHub Desktop
+- Python IDLE or another suitable code editor
+- The `jsonlines` package. Install it once from the project folder:
+  - macOS: `python3.14 -m pip install -r requirements.txt`
+  - Windows: `py -m pip install -r requirements.txt`
+>>>>>>> df983edde17798d5c07773285c5e8a49d99ae353
 
 ## Running the application
 
