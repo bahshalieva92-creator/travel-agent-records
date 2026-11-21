@@ -34,6 +34,12 @@ The Clients, Airlines and Flights tabs are functional, including record-manageme
 
 The application can be launched using Python 3.14 or IDLE.
 
+```
+python3.14 -m pip install -r requirements.txt
+python3.14 src/main.py
+python3.14 -m unittest discover -s tests
+```
+
 ## Data storage
 
 The application uses a list of dictionaries internally. Records are stored in a JSON Lines file, loaded on start-up and saved when the application closes normally.
